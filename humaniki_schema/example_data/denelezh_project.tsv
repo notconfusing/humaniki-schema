@@ -1,0 +1,550 @@
+id	code	type	label	url
+1	afwiki	wikipedia	Afrikaans Wikipedia	https://af.wikipedia.org/
+2	alswiki	wikipedia	Alemannic Wikipedia	https://als.wikipedia.org/
+3	amwiki	wikipedia	Amharic Wikipedia	https://am.wikipedia.org/
+4	angwiki	wikipedia	Old English Wikipedia	https://ang.wikipedia.org/
+5	anwiki	wikipedia	Aragonese Wikipedia	https://an.wikipedia.org/
+6	arcwiki	wikipedia	Aramaic Wikipedia	https://arc.wikipedia.org/
+7	arwiki	wikipedia	Arabic Wikipedia	https://ar.wikipedia.org/
+8	arwikiquote	wikiquote	Arabic Wikiquote	https://ar.wikiquote.org/
+9	arzwiki	wikipedia	Egyptian Arabic Wikipedia	https://arz.wikipedia.org/
+10	astwiki	wikipedia	Asturian Wikipedia	https://ast.wikipedia.org/
+11	aywiki	wikipedia	Aymara Wikipedia	https://ay.wikipedia.org/
+12	azbwiki	wikipedia	South Azerbaijani Wikipedia	https://azb.wikipedia.org/
+13	azwiki	wikipedia	Azerbaijani Wikipedia	https://az.wikipedia.org/
+14	azwikiquote	wikiquote	Azerbaijani Wikiquote	https://az.wikiquote.org/
+15	barwiki	wikipedia	Bavarian Wikipedia	https://bar.wikipedia.org/
+16	bat_smgwiki	wikipedia	Samogitian Wikipedia	https://bat-smg.wikipedia.org/
+17	bawiki	wikipedia	Bashkir Wikipedia	https://ba.wikipedia.org/
+18	bclwiki	wikipedia	Central Bikol Wikipedia	https://bcl.wikipedia.org/
+19	bewiki	wikipedia	Belarusian Wikipedia	https://be.wikipedia.org/
+20	bewikiquote	wikiquote	Belarusian Wikiquote	https://be.wikiquote.org/
+21	be_x_oldwiki	wikipedia	Taraškievica Wikipedia	https://be-tarask.wikipedia.org/
+22	bgwiki	wikipedia	Bulgarian Wikipedia	https://bg.wikipedia.org/
+23	bgwikiquote	wikiquote	Bulgarian Wikiquote	https://bg.wikiquote.org/
+24	bgwikisource	wikisource	Bulgarian Wikisource	https://bg.wikisource.org/
+25	bhwiki	wikipedia	Bihari Wikipedia	https://bh.wikipedia.org/
+26	biwiki	wikipedia	Bislama Wikipedia	https://bi.wikipedia.org/
+27	bnwiki	wikipedia	Bengali Wikipedia	https://bn.wikipedia.org/
+28	brwiki	wikipedia	Breton Wikipedia	https://br.wikipedia.org/
+29	bswiki	wikipedia	Bosnian Wikipedia	https://bs.wikipedia.org/
+30	bswikiquote	wikiquote	Bosnian Wikiquote	https://bs.wikiquote.org/
+31	bxrwiki	wikipedia	Buryat Wikipedia	https://bxr.wikipedia.org/
+32	cawiki	wikipedia	Catalan Wikipedia	https://ca.wikipedia.org/
+33	cawikiquote	wikiquote	Catalan Wikiquote	https://ca.wikiquote.org/
+34	cdowiki	wikipedia	Min Dong Wikipedia	https://cdo.wikipedia.org/
+35	cebwiki	wikipedia	Cebuano Wikipedia	https://ceb.wikipedia.org/
+36	cewiki	wikipedia	Chechen Wikipedia	https://ce.wikipedia.org/
+37	chrwiki	wikipedia	Cherokee Wikipedia	https://chr.wikipedia.org/
+38	ckbwiki	wikipedia	Sorani Kurdish Wikipedia	https://ckb.wikipedia.org/
+39	commonswiki	commons	Wikimedia Commons	https://commons.wikimedia.org/
+40	cowiki	wikipedia	Corsican Wikipedia	https://co.wikipedia.org/
+41	cswiki	wikipedia	Czech Wikipedia	https://cs.wikipedia.org/
+42	cswikiquote	wikiquote	Czech Wikiquote	https://cs.wikiquote.org/
+43	cvwiki	wikipedia	Chuvash Wikipedia	https://cv.wikipedia.org/
+44	cywiki	wikipedia	Welsh Wikipedia	https://cy.wikipedia.org/
+45	dawiki	wikipedia	Danish Wikipedia	https://da.wikipedia.org/
+46	dewiki	wikipedia	German Wikipedia	https://de.wikipedia.org/
+47	dewikiquote	wikiquote	German Wikiquote	https://de.wikiquote.org/
+48	dvwiki	wikipedia	Maldivian Wikipedia	https://dv.wikipedia.org/
+49	elwiki	wikipedia	Greek Wikipedia	https://el.wikipedia.org/
+50	enwiki	wikipedia	English Wikipedia	https://en.wikipedia.org/
+51	enwikiquote	wikiquote	English Wikiquote	https://en.wikiquote.org/
+52	enwikisource	wikisource	English Wikisource	https://en.wikisource.org/
+53	eowiki	wikipedia	Esperanto Wikipedia	https://eo.wikipedia.org/
+54	eowikiquote	wikiquote	Esperanto Wikiquote	https://eo.wikiquote.org/
+55	eswiki	wikipedia	Spanish Wikipedia	https://es.wikipedia.org/
+56	eswikiquote	wikiquote	Spanish Wikiquote	https://es.wikiquote.org/
+57	etwiki	wikipedia	Estonian Wikipedia	https://et.wikipedia.org/
+58	euwiki	wikipedia	Basque Wikipedia	https://eu.wikipedia.org/
+59	fawiki	wikipedia	Persian Wikipedia	https://fa.wikipedia.org/
+60	fawikiquote	wikiquote	Persian Wikiquote	https://fa.wikiquote.org/
+61	fiwiki	wikipedia	Finnish Wikipedia	https://fi.wikipedia.org/
+62	fiwikiquote	wikiquote	Finnish Wikiquote	https://fi.wikiquote.org/
+63	fowiki	wikipedia	Faroese Wikipedia	https://fo.wikipedia.org/
+64	frrwiki	wikipedia	North Frisian Wikipedia	https://frr.wikipedia.org/
+65	frwiki	wikipedia	French Wikipedia	https://fr.wikipedia.org/
+66	frwikiquote	wikiquote	French Wikiquote	https://fr.wikiquote.org/
+67	fywiki	wikipedia	West Frisian Wikipedia	https://fy.wikipedia.org/
+68	ganwiki	wikipedia	Gan Chinese Wikipedia	https://gan.wikipedia.org/
+69	gawiki	wikipedia	Irish Wikipedia	https://ga.wikipedia.org/
+70	gdwiki	wikipedia	Scottish Gaelic Wikipedia	https://gd.wikipedia.org/
+71	glwiki	wikipedia	Galician Wikipedia	https://gl.wikipedia.org/
+72	guwiki	wikipedia	Gujarati Wikipedia	https://gu.wikipedia.org/
+73	hakwiki	wikipedia	Hakka Wikipedia	https://hak.wikipedia.org/
+74	hawwiki	wikipedia	Hawaiian Wikipedia	https://haw.wikipedia.org/
+75	hewiki	wikipedia	Hebrew Wikipedia	https://he.wikipedia.org/
+76	hewikiquote	wikiquote	Hebrew Wikiquote	https://he.wikiquote.org/
+77	hifwiki	wikipedia	Fiji Hindi Wikipedia	https://hif.wikipedia.org/
+78	hiwiki	wikipedia	Hindi Wikipedia	https://hi.wikipedia.org/
+79	hrwiki	wikipedia	Croatian Wikipedia	https://hr.wikipedia.org/
+80	hrwikiquote	wikiquote	Croatian Wikiquote	https://hr.wikiquote.org/
+81	htwiki	wikipedia	Haitian Creole Wikipedia	https://ht.wikipedia.org/
+82	huwiki	wikipedia	Hungarian Wikipedia	https://hu.wikipedia.org/
+83	huwikiquote	wikiquote	Hungarian Wikiquote	https://hu.wikiquote.org/
+84	hywiki	wikipedia	Armenian Wikipedia	https://hy.wikipedia.org/
+85	iawiki	wikipedia	Interlingua Wikipedia	https://ia.wikipedia.org/
+86	idwiki	wikipedia	Indonesian Wikipedia	https://id.wikipedia.org/
+87	idwikiquote	wikiquote	Indonesian Wikiquote	https://id.wikiquote.org/
+88	ilowiki	wikipedia	Ilokano Wikipedia	https://ilo.wikipedia.org/
+89	iowiki	wikipedia	Ido Wikipedia	https://io.wikipedia.org/
+90	iswiki	wikipedia	Icelandic Wikipedia	https://is.wikipedia.org/
+91	itwiki	wikipedia	Italian Wikipedia	https://it.wikipedia.org/
+92	itwikiquote	wikiquote	Italian Wikiquote	https://it.wikiquote.org/
+93	itwikisource	wikisource	Italian Wikisource	https://it.wikisource.org/
+94	iuwiki	wikipedia	Inuktitut Wikipedia	https://iu.wikipedia.org/
+95	jamwiki	wikipedia	Jamaican Wikipedia	https://jam.wikipedia.org/
+96	jawiki	wikipedia	Japanese Wikipedia	https://ja.wikipedia.org/
+97	jvwiki	wikipedia	Javanese Wikipedia	https://jv.wikipedia.org/
+98	kawiki	wikipedia	Georgian Wikipedia	https://ka.wikipedia.org/
+99	kawikiquote	wikiquote	Georgian Wikiquote	https://ka.wikiquote.org/
+100	kkwiki	wikipedia	Kazakh Wikipedia	https://kk.wikipedia.org/
+101	knwiki	wikipedia	Kannada Wikipedia	https://kn.wikipedia.org/
+102	kowiki	wikipedia	Korean Wikipedia	https://ko.wikipedia.org/
+103	kowikiquote	wikiquote	Korean Wikiquote	https://ko.wikiquote.org/
+104	kowikisource	wikisource	Korean Wikisource	https://ko.wikisource.org/
+105	kshwiki	wikipedia	Ripuarian Wikipedia	https://ksh.wikipedia.org/
+106	kuwiki	wikipedia	Kurdish Wikipedia	https://ckb.wikipedia.org/ https://ku.wikipedia.org/
+107	kwwiki	wikipedia	Cornish Wikipedia	https://kw.wikipedia.org/
+108	lawiki	wikipedia	Latin Wikipedia	https://la.wikipedia.org/
+109	lbwiki	wikipedia	Luxembourgish Wikipedia	https://lb.wikipedia.org/
+110	lijwiki	wikipedia	Ligurian Wikipedia	https://lij.wikipedia.org/
+111	lmowiki	wikipedia	Lombard Wikipedia	https://lmo.wikipedia.org/
+112	lnwiki	wikipedia	Lingala Wikipedia	https://ln.wikipedia.org/
+113	ltwiki	wikipedia	Lithuanian Wikipedia	https://lt.wikipedia.org/
+114	ltwikiquote	wikiquote	Lithuanian Wikiquote	https://lt.wikiquote.org/
+115	lvwiki	wikipedia	Latvian Wikipedia	https://lv.wikipedia.org/
+116	maiwiki	wikipedia	Maithili Wikipedia	https://mai.wikipedia.org/
+117	mgwiki	wikipedia	Malagasy Wikipedia	https://mg.wikipedia.org/
+118	miwiki	wikipedia	Māori Wikipedia	https://mi.wikipedia.org/
+119	mkwiki	wikipedia	Macedonian Wikipedia	https://mk.wikipedia.org/
+120	mlwiki	wikipedia	Malayalam Wikipedia	https://ml.wikipedia.org/
+121	mnwiki	wikipedia	Mongolian Wikipedia	https://mn.wikipedia.org/
+122	mrwiki	wikipedia	Marathi Wikipedia	https://mr.wikipedia.org/
+123	mswiki	wikipedia	Malay Wikipedia	https://ms.wikipedia.org/
+124	mywiki	wikipedia	Burmese Wikipedia	https://my.wikipedia.org/
+125	mznwiki	wikipedia	Mazanderani Wikipedia	https://mzn.wikipedia.org/
+126	nahwiki	wikipedia	Nahuatl Wikipedia	https://nah.wikipedia.org/
+127	nawiki	wikipedia	Nauru Wikipedia	https://na.wikipedia.org/
+128	ndswiki	wikipedia	Plattdüütsch Wikipedia	https://nds.wikipedia.org/
+129	newiki	wikipedia	Nepali Wikipedia	https://ne.wikipedia.org/
+130	newwiki	wikipedia	Nepal Bhasa Wikipedia	https://new.wikipedia.org/
+131	nlwiki	wikipedia	Dutch Wikipedia	https://nl.wikipedia.org/
+132	nlwikiquote	wikiquote	Dutch Wikiquote	https://nl.wikiquote.org/
+133	nnwiki	wikipedia	Norwegian (Nynorsk) Wikipedia	https://nn.wikipedia.org/
+134	nowiki	wikipedia	Norwegian Wikipedia	https://no.wikipedia.org/
+135	nywiki	wikipedia	Chewa Wikipedia	https://ny.wikipedia.org/
+136	ocwiki	wikipedia	Occitan Wikipedia	https://oc.wikipedia.org/
+137	pamwiki	wikipedia	Kapampangan Wikipedia	https://pam.wikipedia.org/
+138	papwiki	wikipedia	Papiamento Wikipedia	https://pap.wikipedia.org/
+139	pawiki	wikipedia	Punjabi Wikipedia	https://pa.wikipedia.org/
+140	plwiki	wikipedia	Polish Wikipedia	https://pl.wikipedia.org/
+141	plwikiquote	wikiquote	Polish Wikiquote	https://pl.wikiquote.org/
+142	pmswiki	wikipedia	Piedmontese Wikipedia	https://pms.wikipedia.org/
+143	pnbwiki	wikipedia	Punjabi (Western) Wikipedia	https://pnb.wikipedia.org/
+144	ptwiki	wikipedia	Portuguese Wikipedia	https://pt.wikipedia.org/
+145	ptwikiquote	wikiquote	Portuguese Wikiquote	https://pt.wikiquote.org/
+146	quwiki	wikipedia	Quechua Wikipedia	https://qu.wikipedia.org/
+147	rowiki	wikipedia	Romanian Wikipedia	https://ro.wikipedia.org/
+148	ruewiki	wikipedia	Rusyn Wikipedia	https://rue.wikipedia.org/
+149	ruwiki	wikipedia	Russian Wikipedia	https://ru.wikipedia.org/
+150	ruwikiquote	wikiquote	Russian Wikiquote	https://ru.wikiquote.org/
+151	rwwiki	wikipedia	Kinyarwanda Wikipedia	https://rw.wikipedia.org/
+152	sahwiki	wikipedia	Sakha Wikipedia	https://sah.wikipedia.org/
+153	sawiki	wikipedia	Sanskrit Wikipedia	https://sa.wikipedia.org/
+154	scnwiki	wikipedia	Sicilian Wikipedia	https://scn.wikipedia.org/
+155	scowiki	wikipedia	Scots Wikipedia	https://sco.wikipedia.org/
+156	scwiki	wikipedia	Sardinian Wikipedia	https://sc.wikipedia.org/
+157	shwiki	wikipedia	Serbo-Croatian Wikipedia	https://sh.wikipedia.org/
+158	simplewiki	wikipedia	Simple English Wikipedia	https://simple.wikipedia.org/
+159	simplewikiquote	wikiquote	Simple English Wikiquote	https://simple.wikiquote.org/
+160	siwiki	wikipedia	Sinhala Wikipedia	https://si.wikipedia.org/
+161	skwiki	wikipedia	Slovak Wikipedia	https://sk.wikipedia.org/
+162	skwikiquote	wikiquote	Slovak Wikiquote	https://sk.wikiquote.org/
+163	slwiki	wikipedia	Slovene Wikipedia	https://sl.wikipedia.org/
+164	slwikiquote	wikiquote	Slovenian Wikiquote	https://sl.wikiquote.org/
+165	sowiki	wikipedia	Somali Wikipedia	https://so.wikipedia.org/
+166	sqwiki	wikipedia	Albanian Wikipedia	https://sq.wikipedia.org/
+167	sqwikiquote	wikiquote	Albanian Wikiquote	https://sq.wikiquote.org/
+168	srnwiki	wikipedia	Sranan Wikipedia	https://srn.wikipedia.org/
+169	srwiki	wikipedia	Serbian Wikipedia	https://sr.wikipedia.org/
+170	srwikiquote	wikiquote	Serbian Wikiquote	https://sr.wikiquote.org/
+171	svwiki	wikipedia	Swedish Wikipedia	https://sv.wikipedia.org/
+172	swwiki	wikipedia	Swahili Wikipedia	https://sw.wikipedia.org/
+173	tawiki	wikipedia	Tamil Wikipedia	https://ta.wikipedia.org/
+174	tewiki	wikipedia	Telugu Wikipedia	https://te.wikipedia.org/
+175	tgwiki	wikipedia	Tajik Wikipedia	https://tg.wikipedia.org/
+176	thwiki	wikipedia	Thai Wikipedia	https://th.wikipedia.org/
+177	thwikiquote	wikiquote	Thai Wikiquote	https://th.wikiquote.org/
+178	tkwiki	wikipedia	Turkmen Wikipedia	https://tk.wikipedia.org/
+179	tlwiki	wikipedia	Tagalog Wikipedia	https://tl.wikipedia.org/
+180	trwiki	wikipedia	Turkish Wikipedia	https://tr.wikipedia.org/
+181	trwikiquote	wikiquote	Turkish Wikiquote	https://tr.wikiquote.org/
+182	ttwiki	wikipedia	Tatar Wikipedia	https://tt.wikipedia.org/
+183	udmwiki	wikipedia	Udmurt Wikipedia	https://udm.wikipedia.org/
+184	ugwiki	wikipedia	Uyghur Wikipedia	https://ug.wikipedia.org/
+185	ukwiki	wikipedia	Ukrainian Wikipedia	https://uk.wikipedia.org/
+186	ukwikiquote	wikiquote	Ukrainian Wikiquote	https://uk.wikiquote.org/
+187	urwiki	wikipedia	Urdu Wikipedia	https://ur.wikipedia.org/
+188	uzwiki	wikipedia	Uzbek Wikipedia	https://uz.wikipedia.org/
+189	vepwiki	wikipedia	Veps Wikipedia	https://vep.wikipedia.org/
+190	viwiki	wikipedia	Vietnamese Wikipedia	https://vi.wikipedia.org/
+191	viwikiquote	wikiquote	Vietnamese Wikiquote	https://vi.wikiquote.org/
+192	vowiki	wikipedia	Volapük Wikipedia	https://vo.wikipedia.org/
+193	warwiki	wikipedia	Waray Wikipedia	https://war.wikipedia.org/
+194	wuuwiki	wikipedia	Wu Chinese Wikipedia	https://wuu.wikipedia.org/
+195	xmfwiki	wikipedia	Mingrelian Wikipedia	https://xmf.wikipedia.org/
+196	yiwiki	wikipedia	Yiddish Wikipedia	https://yi.wikipedia.org/
+197	yowiki	wikipedia	Yoruba Wikipedia	https://yo.wikipedia.org/
+198	zhwiki	wikipedia	Chinese Wikipedia	https://zh.wikipedia.org/
+199	zh_classicalwiki	wikipedia	Literary Chinese Wikipedia	https://zh-classical.wikipedia.org/
+200	zh_min_nanwiki	wikipedia	Min Nan Wikipedia	https://zh-min-nan.wikipedia.org/
+201	zh_yuewiki	wikipedia	Cantonese Wikipedia	https://zh-yue.wikipedia.org/
+202	elwikiquote	wikiquote	Greek Wikiquote	https://el.wikiquote.org/
+203	etwikiquote	wikiquote	Estonian Wikiquote	https://et.wikiquote.org/
+204	glwikiquote	wikiquote	Galician Wikiquote	https://gl.wikiquote.org/
+205	hywikiquote	wikiquote	Armenian Wikiquote	https://hy.wikiquote.org/
+206	liwikiquote	wikiquote	Limburgish Wikiquote	https://li.wikiquote.org/
+207	mrjwiki	wikipedia	Hill Mari Wikipedia	https://mrj.wikipedia.org/
+208	svwikiquote	wikiquote	Swedish Wikiquote	https://sv.wikiquote.org/
+209	zhwikiquote	wikiquote	Chinese Wikiquote	https://zh.wikiquote.org/
+210	abwiki	wikipedia	Abkhaz Wikipedia	https://ab.wikipedia.org/
+211	acewiki	wikipedia	Acehnese Wikipedia	https://ace.wikipedia.org/
+212	arwikinews	wikinews	Arabic Wikinews	https://ar.wikinews.org/
+213	arwikisource	wikisource	Arabic Wikisource	https://ar.wikisource.org/
+214	aswiki	wikipedia	Assamese Wikipedia	https://as.wikipedia.org/
+215	avwiki	wikipedia	Avar Wikipedia	https://av.wikipedia.org/
+216	azwikisource	wikisource	Azerbaijani Wikisource	https://az.wikisource.org/
+217	bjnwiki	wikipedia	Banjar Wikipedia	https://bjn.wikipedia.org/
+218	bmwiki	wikipedia	Bambara Wikipedia	https://bm.wikipedia.org/
+219	bowiki	wikipedia	Tibetan Wikipedia	https://bo.wikipedia.org/
+220	cawikinews	wikinews	Catalan Wikinews	https://ca.wikinews.org/
+221	cbk_zamwiki	wikipedia	Chavacano Wikipedia	https://cbk-zam.wikipedia.org/
+222	chywiki	wikipedia	Cheyenne Wikipedia	https://chy.wikipedia.org/
+223	crhwiki	wikipedia	Crimean Tatar Wikipedia	https://crh.wikipedia.org/
+224	cswikinews	wikinews	Czech Wikinews	https://cs.wikinews.org/
+225	cywikiquote	wikiquote	Welsh Wikiquote	https://cy.wikiquote.org/
+226	dawikiquote	wikiquote	Danish Wikiquote	https://da.wikiquote.org/
+227	dewikinews	wikinews	German Wikinews	https://de.wikinews.org/
+228	diqwiki	wikipedia	Zazaki Wikipedia	https://diq.wikipedia.org/
+229	dsbwiki	wikipedia	Lower Sorbian Wikipedia	https://dsb.wikipedia.org/
+230	elwikinews	wikinews	Greek Wikinews	https://el.wikinews.org/
+231	elwikisource	wikisource	Modern Greek Wikisource	https://el.wikisource.org/
+232	emlwiki	wikipedia	Emiliano–Romagnolo Wikipedia	https://eml.wikipedia.org/
+233	enwikinews	wikinews	English Wikinews	https://en.wikinews.org/
+234	eowikinews	wikinews	Esperanto Wikinews	https://eo.wikinews.org/
+235	eowikisource	wikisource	Esperanto Wikisource	https://eo.wikisource.org/
+236	eswikinews	wikinews	Spanish Wikinews	https://es.wikinews.org/
+237	eswikisource	wikisource	Spanish Wikisource	https://es.wikisource.org/
+238	extwiki	wikipedia	Extremaduran Wikipedia	https://ext.wikipedia.org/
+239	fawikinews	wikinews	Persian Wikinews	https://fa.wikinews.org/
+240	fawikisource	wikisource	Persian Wikisource	https://fa.wikisource.org/
+241	frwikinews	wikinews	French Wikinews	https://fr.wikinews.org/
+242	frwikisource	wikisource	French Wikisource	https://fr.wikisource.org/
+243	furwiki	wikipedia	Friulian Wikipedia	https://fur.wikipedia.org/
+244	gnwiki	wikipedia	Guarani Wikipedia	https://gn.wikipedia.org/
+245	gomwiki	wikipedia	Goan Konkani Wikipedia	https://gom.wikipedia.org/
+246	gotwiki	wikipedia	Gothic Wikipedia	https://got.wikipedia.org/
+247	gvwiki	wikipedia	Manx Wikipedia	https://gv.wikipedia.org/
+248	hawiki	wikipedia	Hausa Wikipedia	https://ha.wikipedia.org/
+249	hewikisource	wikisource	Hebrew Wikisource	https://he.wikisource.org/
+250	hiwikiquote	wikiquote	Hindi Wikiquote	https://hi.wikiquote.org/
+251	hsbwiki	wikipedia	Upper Sorbian Wikipedia	https://hsb.wikipedia.org/
+252	iewiki	wikipedia	Interlingue Wikipedia	https://ie.wikipedia.org/
+253	igwiki	wikipedia	Igbo Wikipedia	https://ig.wikipedia.org/
+254	itwikinews	wikinews	Italian Wikinews	https://it.wikinews.org/
+255	jawikisource	wikisource	Japanese Wikisource	https://ja.wikisource.org/
+256	jbowiki	wikipedia	Lojban Wikipedia	https://jbo.wikipedia.org/
+257	kaawiki	wikipedia	Karakalpak Wikipedia	https://kaa.wikipedia.org/
+258	kabwiki	wikipedia	Kabyle Wikipedia	https://kab.wikipedia.org/
+259	klwiki	wikipedia	Greenlandic Wikipedia	https://kl.wikipedia.org/
+260	kmwiki	wikipedia	Khmer Wikipedia	https://km.wikipedia.org/
+261	kowikinews	wikinews	Korean Wikinews	https://ko.wikinews.org/
+262	kswiki	wikipedia	Kashmiri Wikipedia	https://ks.wikipedia.org/
+263	kywiki	wikipedia	Kyrgyz Wikipedia	https://ky.wikipedia.org/
+264	ladwiki	wikipedia	Judaeo-Spanish Wikipedia	https://lad.wikipedia.org/
+265	liwiki	wikipedia	Limburgish Wikipedia	https://li.wikipedia.org/
+266	lowiki	wikipedia	Lao Wikipedia	https://lo.wikipedia.org/
+267	ltgwiki	wikipedia	Latgalian Wikipedia	https://ltg.wikipedia.org/
+268	map_bmswiki	wikipedia	Banyumasan Wikipedia	https://map-bms.wikipedia.org/
+269	mhrwiki	wikipedia	Meadow Mari Wikipedia	https://mhr.wikipedia.org/
+270	mtwiki	wikipedia	Maltese Wikipedia	https://mt.wikipedia.org/
+271	myvwiki	wikipedia	Erzyan Wikipedia	https://myv.wikipedia.org/
+272	napwiki	wikipedia	Neapolitan Wikipedia	https://nap.wikipedia.org/
+273	nds_nlwiki	wikipedia	Dutch Low Saxon Wikipedia	https://nds-nl.wikipedia.org/
+274	nowikinews	wikinews	Norwegian Wikinews	https://no.wikinews.org/
+275	nowikiquote	wikiquote	Norwegian (Bokmål) Wikiquote	https://no.wikiquote.org/
+276	nrmwiki	wikipedia	Norman Wikipedia	https://nrm.wikipedia.org/
+277	nsowiki	wikipedia	Northern Sotho Wikipedia	https://nso.wikipedia.org/
+278	nvwiki	wikipedia	Navajo Wikipedia	https://nv.wikipedia.org/
+279	orwiki	wikipedia	Odia Wikipedia	https://or.wikipedia.org/
+280	oswiki	wikipedia	Ossetian Wikipedia	https://os.wikipedia.org/
+281	pagwiki	wikipedia	Pangasinan Wikipedia	https://pag.wikipedia.org/
+282	pdcwiki	wikipedia	Pennsylvania German Wikipedia	https://pdc.wikipedia.org/
+283	pihwiki	wikipedia	Norfolk Wikipedia	https://pih.wikipedia.org/
+284	plwikisource	wikisource	Polish Wikisource	https://pl.wikisource.org/
+285	pswiki	wikipedia	Pashto Wikipedia	https://ps.wikipedia.org/
+286	ptwikinews	wikinews	Portuguese Wikinews	https://pt.wikinews.org/
+287	rmwiki	wikipedia	Romansh Wikipedia	https://rm.wikipedia.org/
+288	roa_tarawiki	wikipedia	Tarantino Wikipedia	https://roa-tara.wikipedia.org/
+289	ruwikinews	wikinews	Russian Wikinews	https://ru.wikinews.org/
+290	sdwiki	wikipedia	Sindhi Wikipedia	https://sd.wikipedia.org/
+291	sewiki	wikipedia	Northern Sami Wikipedia	https://se.wikipedia.org/
+292	srwikinews	wikinews	Serbian Wikinews	https://sr.wikinews.org/
+293	suwiki	wikipedia	Sundanese Wikipedia	https://su.wikipedia.org/
+294	svwikinews	wikinews	Swedish Wikinews	https://sv.wikinews.org/
+295	svwikisource	wikisource	Swedish Wikisource	https://sv.wikisource.org/
+296	szlwiki	wikipedia	Silesian Wikipedia	https://szl.wikipedia.org/
+297	tawikiquote	wikiquote	Tamil Wikiquote	https://ta.wikiquote.org/
+298	tetwiki	wikipedia	Tetum Wikipedia	https://tet.wikipedia.org/
+299	tpiwiki	wikipedia	Tok Pisin Wikipedia	https://tpi.wikipedia.org/
+300	trwikinews	wikinews	Turkish Wikinews	https://tr.wikinews.org/
+301	trwikisource	wikisource	Turkish Wikisource	https://tr.wikisource.org/
+302	tywiki	wikipedia	Tahitian Wikipedia	https://ty.wikipedia.org/
+303	ukwikinews	wikinews	Ukrainian Wikinews	https://uk.wikinews.org/
+304	vecwiki	wikipedia	Venetian Wikipedia	https://vec.wikipedia.org/
+305	viwikisource	wikisource	Vietnamese Wikisource	https://vi.wikisource.org/
+306	vlswiki	wikipedia	West Flemish Wikipedia	https://vls.wikipedia.org/
+307	wawiki	wikipedia	Walloon Wikipedia	https://wa.wikipedia.org/
+308	zeawiki	wikipedia	Zeelandic Wikipedia	https://zea.wikipedia.org/
+309	zhwikinews	wikinews	Chinese Wikinews	https://zh.wikinews.org/
+310	zhwikisource	wikisource	Chinese Wikisource	https://zh.wikisource.org/
+311	zuwiki	wikipedia	Zulu Wikipedia	https://zu.wikipedia.org/
+312	minwiki	wikipedia	Minangkabau Wikipedia	https://min.wikipedia.org/
+313	zawiki	wikipedia	Zhuang Wikipedia	https://za.wikipedia.org/
+314	afwikiquote	wikiquote	Afrikaans Wikiquote	https://af.wikiquote.org/
+315	cawikisource	wikisource	Catalan Wikisource	https://ca.wikisource.org/
+316	dawikisource	wikisource	Danish Wikisource	https://da.wikisource.org/
+317	dewikisource	wikisource	German Wikisource	https://de.wikisource.org/
+318	fiwikisource	wikisource	Finnish Wikisource	https://fi.wikisource.org/
+319	glkwiki	wikipedia	Gilaki Wikipedia	https://glk.wikipedia.org/
+320	jawikiquote	wikiquote	Japanese Wikiquote	https://ja.wikiquote.org/
+321	knwikiquote	wikiquote	Kannada Wikiquote	https://kn.wikiquote.org/
+322	kuwikiquote	wikiquote	Kurdish Wikiquote	https://ku.wikiquote.org/
+323	lezwiki	wikipedia	Lezgian Wikipedia	https://lez.wikipedia.org/
+324	mlwikiquote	wikiquote	Malayalam Wikiquote	https://ml.wikiquote.org/
+325	mrwikiquote	wikiquote	Marathi Wikiquote	https://mr.wikiquote.org/
+326	olowiki	wikipedia	Livvi-Karelian Wikipedia	https://olo.wikipedia.org/
+327	omwiki	wikipedia	Oromo Wikipedia	https://om.wikipedia.org/
+328	ptwikisource	wikisource	Portuguese Wikisource	https://pt.wikisource.org/
+329	rowikiquote	wikiquote	Romanian Wikiquote	https://ro.wikiquote.org/
+330	ruwikisource	wikisource	Russian Wikisource	https://ru.wikisource.org/
+331	smwiki	wikipedia	Samoan Wikipedia	https://sm.wikipedia.org/
+332	stqwiki	wikipedia	Saterland Frisian Wikipedia	https://stq.wikipedia.org/
+333	tewikiquote	wikiquote	Telugu Wikiquote	https://te.wikiquote.org/
+334	viwikibooks	wikibooks	Vietnamese Wikibooks	https://vi.wikibooks.org/
+335	frpwiki	wikipedia	Franco-Provençal Wikipedia	https://frp.wikipedia.org/
+336	kgwiki	wikipedia	Kongo Wikipedia	https://kg.wikipedia.org/
+337	mwlwiki	wikipedia	Mirandese Wikipedia	https://mwl.wikipedia.org/
+338	idwikisource	wikisource	Indonesian Wikisource	https://id.wikisource.org/
+339	kiwiki	wikipedia	Gikuyu Wikipedia	https://ki.wikipedia.org/
+340	lrcwiki	wikipedia	Northern Luri Wikipedia	https://lrc.wikipedia.org/
+341	bpywiki	wikipedia	Bishnupriya Manipuri Wikipedia	https://bpy.wikipedia.org/
+342	cuwiki	wikipedia	Old Church Slavonic Wikipedia	https://cu.wikipedia.org/
+343	euwikiquote	wikiquote	Basque Wikiquote	https://eu.wikiquote.org/
+344	fiu_vrowiki	wikipedia	Voro Wikipedia	https://fiu-vro.wikipedia.org/
+345	huwikinews	wikinews	Hungarian Wikinews	https://hu.wikinews.org/
+346	chwiki	wikipedia	Chamorro Wikipedia	https://ch.wikipedia.org/
+347	cswikisource	wikisource	Czech Wikisource	https://cs.wikisource.org/
+348	gagwiki	wikipedia	Gagauz Wikipedia	https://gag.wikipedia.org/
+349	krcwiki	wikipedia	Karachay-Balkar Wikipedia	https://krc.wikipedia.org/
+350	pcdwiki	wikipedia	Picard Wikipedia	https://pcd.wikipedia.org/
+351	roa_rupwiki	wikipedia	Aromanian Wikipedia	https://roa-rup.wikipedia.org/
+352	rowikibooks	wikibooks	Romanian Wikibooks	https://ro.wikibooks.org/
+353	tiwiki	wikipedia	Tigrinya Wikipedia	https://ti.wikipedia.org/
+354	xalwiki	wikipedia	Kalmyk Wikipedia	https://xal.wikipedia.org/
+355	xhwiki	wikipedia	Xhosa Wikipedia	https://xh.wikipedia.org/
+356	glwikisource	wikisource	Galician Wikisource	https://gl.wikisource.org/
+357	kbdwiki	wikipedia	Kabardian Wikipedia	https://kbd.wikipedia.org/
+358	akwiki	wikipedia	Akan Wikipedia	https://ak.wikipedia.org/
+359	eewiki	wikipedia	Ewe Wikipedia	https://ee.wikipedia.org/
+360	fjwiki	wikipedia	Fijian Wikipedia	https://fj.wikipedia.org/
+361	idwikibooks	wikibooks	Indonesian Wikibooks	https://id.wikibooks.org/
+362	ikwiki	wikipedia	Inupiat Wikipedia	https://ik.wikipedia.org/
+363	koiwiki	wikipedia	Komi-Permyak Wikipedia	https://koi.wikipedia.org/
+364	kvwiki	wikipedia	Komi Wikipedia	https://kv.wikipedia.org/
+365	lawikiquote	wikiquote	Latin Wikiquote	https://la.wikiquote.org/
+366	lbewiki	wikipedia	Lak Wikipedia	https://lbe.wikipedia.org/
+367	lgwiki	wikipedia	Luganda Wikipedia	https://lg.wikipedia.org/
+368	nnwikiquote	wikiquote	Norwegian (Nynorsk) Wikiquote	https://nn.wikiquote.org/
+369	novwiki	wikipedia	Novial Wikipedia	https://nov.wikipedia.org/
+370	pflwiki	wikipedia	Palatinate German Wikipedia	https://pfl.wikipedia.org/
+371	rnwiki	wikipedia	Kirundi Wikipedia	https://rn.wikipedia.org/
+372	towiki	wikipedia	Tongan Wikipedia	https://to.wikipedia.org/
+373	tumwiki	wikipedia	Tumbuka Wikipedia	https://tum.wikipedia.org/
+374	twwiki	wikipedia	Twi Wikipedia	https://tw.wikipedia.org/
+375	urwikiquote	wikiquote	Urdu Wikiquote	https://ur.wikiquote.org/
+376	wowiki	wikipedia	Wolof Wikipedia	https://wo.wikipedia.org/
+377	piwiki	wikipedia	Pali Wikipedia	https://pi.wikipedia.org/
+378	angwikiquote	wikiquote	Old English Wikiquote	https://ang.wikiquote.org/
+379	lawikisource	wikisource	Latin Wikisource	https://la.wikisource.org/
+380	tcywiki	wikipedia	Tulu Wikipedia	https://tcy.wikipedia.org/
+381	uzwikiquote	wikiquote	Uzbek Wikiquote	https://uz.wikiquote.org/
+382	iswikiquote	wikiquote	Icelandic Wikiquote	https://is.wikiquote.org/
+383	nowikisource	wikisource	Norwegian Wikisource	https://no.wikisource.org/
+384	stwiki	wikipedia	Sotho Wikipedia	https://st.wikipedia.org/
+385	bewikisource	wikisource	Belarusian Wikisource	https://be.wikisource.org/
+386	ukwikisource	wikisource	Ukrainian Wikisource	https://uk.wikisource.org/
+387	brwikiquote	wikiquote	Breton Wikiquote	https://br.wikiquote.org/
+388	csbwiki	wikipedia	Kashubian Wikipedia	https://csb.wikipedia.org/
+389	mdfwiki	wikipedia	Moksha Wikipedia	https://mdf.wikipedia.org/
+390	bswikisource	wikisource	Bosnian Wikisource	https://bs.wikisource.org/
+391	hrwikisource	wikisource	Croatian Wikisource	https://hr.wikisource.org/
+392	huwikisource	wikisource	Hungarian Wikisource	https://hu.wikisource.org/
+393	ltwikisource	wikisource	Lithuanian Wikisource	https://lt.wikisource.org/
+394	rowikisource	wikisource	Romanian Wikisource	https://ro.wikisource.org/
+395	nlwikisource	wikisource	Dutch Wikisource	https://nl.wikisource.org/
+396	tswiki	wikipedia	Tsonga Wikipedia	https://ts.wikipedia.org/
+397	tyvwiki	wikipedia	Tuvinian Wikipedia	https://tyv.wikipedia.org/
+398	hywikisource	wikisource	Armenian Wikisource	https://hy.wikisource.org/
+399	adywiki	wikipedia	Adyghe Wikipedia	https://ady.wikipedia.org/
+400	bnwikisource	wikisource	Bengali Wikisource	https://bn.wikisource.org/
+401	frwikiversity	wikiversity	French Wikiversity	https://fr.wikiversity.org/
+402	srwikisource	wikisource	Serbian Wikisource	https://sr.wikisource.org/
+403	enwikibooks	wikibooks	English Wikibooks	https://en.wikibooks.org/
+404	itwikibooks	wikibooks	Italian Wikibooks	https://it.wikibooks.org/
+405	nlwikibooks	wikibooks	Dutch Wikibooks	https://nl.wikibooks.org/
+406	slwikisource	wikisource	Slovene Wikisource	https://sl.wikisource.org/
+407	frwikibooks	wikibooks	French Wikibooks	https://fr.wikibooks.org/
+408	etwikisource	wikisource	Estonian Wikisource	https://et.wikisource.org/
+409	itwikiversity	wikiversity	Italian Wikiversity	https://it.wikiversity.org/
+410	pntwiki	wikipedia	Pontic Greek Wikipedia	https://pnt.wikipedia.org/
+411	jawikibooks	wikibooks	Japanese Wikibooks	https://ja.wikibooks.org/
+412	srwikibooks	wikibooks	Serbian Wikibooks	https://sr.wikibooks.org/
+413	snwiki	wikipedia	Shona Wikipedia	https://sn.wikipedia.org/
+414	zh_min_nanwikiquote	wikiquote	Min Nan Wikiquote	https://zh-min-nan.wikiquote.org/
+415	sawikiquote	wikiquote	Sanskrit Wikiquote	https://sa.wikiquote.org/
+416	plwikinews	wikinews	Polish Wikinews	https://pl.wikinews.org/
+417	rowikinews	wikinews	Romanian Wikinews	https://ro.wikinews.org/
+418	kywikiquote	wikiquote	Kirghiz Wikiquote	https://ky.wikiquote.org/
+419	guwikiquote	wikiquote	Gujarati Wikiquote	https://gu.wikiquote.org/
+420	guwikisource	wikisource	Gujarati Wikisource	https://gu.wikisource.org/
+421	rmywiki	wikipedia	Romani Wikipedia	https://rmy.wikipedia.org/
+422	sswiki	wikipedia	Swazi Wikipedia	https://ss.wikipedia.org/
+423	mkwikisource	wikisource	Macedonian Wikisource	https://mk.wikisource.org/
+424	specieswiki	wikispecies	Wikispecies	https://species.wikimedia.org/
+425	crwiki	wikipedia	Cree Wikipedia	https://cr.wikipedia.org/
+426	sgwiki	wikipedia	Sango Wikipedia	https://sg.wikipedia.org/
+427	vewiki	wikipedia	Venda Wikipedia	https://ve.wikipedia.org/
+428	wowikiquote	wikiquote	Wolof Wikiquote	https://wo.wikiquote.org/
+429	bugwiki	wikipedia	Buginese Wikipedia	https://bug.wikipedia.org/
+430	mkwikibooks	wikibooks	Macedonian Wikibooks	https://mk.wikibooks.org/
+431	dewikivoyage	wikivoyage	German Wikivoyage	https://de.wikivoyage.org/
+432	mowiki	wikipedia	Moldovan Wikipedia	https://mo.wikipedia.org/
+433	ffwiki	wikipedia	Fula Wikipedia	https://ff.wikipedia.org/
+434	enwikivoyage	wikivoyage	English Wikivoyage	https://en.wikivoyage.org/
+435	tawikibooks	wikibooks	Tamil Wikibooks	https://ta.wikibooks.org/
+436	brwikisource	wikisource	Breton Wikisource	https://br.wikisource.org/
+437	sawikisource	wikisource	Sanskrit Wikisource	https://sa.wikisource.org/
+438	mlwikisource	wikisource	Malayalam Wikisource	https://ml.wikisource.org/
+439	arwikiversity	wikiversity	Arabic Wikiversity	https://ar.wikiversity.org/
+440	tnwiki	wikipedia	Tswana Wikipedia	https://tn.wikipedia.org/
+441	ptwikibooks	wikibooks	Portuguese Wikibooks	https://pt.wikibooks.org/
+442	dzwiki	wikipedia	Dzongkha Wikipedia	https://dz.wikipedia.org/
+443	arwikibooks	wikibooks	Arabic Wikibooks	https://ar.wikibooks.org/
+444	iswikibooks	wikibooks	Icelandic Wikibooks	https://is.wikibooks.org/
+445	suwikiquote	wikiquote	Sundanese Wikiquote	https://su.wikiquote.org/
+446	iswikisource	wikisource	Icelandic Wikisource	https://is.wikisource.org/
+447	hewikinews	wikinews	Hebrew Wikinews	https://he.wikinews.org/
+448	sqwikibooks	wikibooks	Albanian Wikibooks	https://sq.wikibooks.org/
+449	dewikibooks	wikibooks	German Wikibooks	https://de.wikibooks.org/
+450	plwikibooks	wikibooks	Polish Wikibooks	https://pl.wikibooks.org/
+451	lbwikiquote	wikiquote	Luxembourgish Wikiquote	https://lb.wikiquote.org/
+452	svwikibooks	wikibooks	Swedish Wikibooks	https://sv.wikibooks.org/
+453	vecwikisource	wikisource	Venetian Wikisource	https://vec.wikisource.org/
+454	yiwikisource	wikisource	Yiddish Wikisource	https://yi.wikisource.org/
+455	tewikisource	wikisource	Telugu Wikisource	https://te.wikisource.org/
+456	tawikisource	wikisource	Tamil Wikisource	https://ta.wikisource.org/
+457	metawiki	meta	Wikimedia Meta-Wiki	https://meta.wikimedia.org/
+458	thwikisource	wikisource	Thai Wikisource	https://th.wikisource.org/
+459	dewikiversity	wikiversity	German Wikiversity	https://de.wikiversity.org/ http://de.wikiversity.org/
+460	azwikibooks	wikibooks	Azerbaijani Wikibooks	https://az.wikibooks.org/
+461	fiwikivoyage	wikivoyage	Finnish Wikivoyage	https://fi.wikivoyage.org/
+462	nowikibooks	wikibooks	Norwegian (Bokmål) Wikibooks	https://no.wikibooks.org/
+463	mrwikisource	wikisource	Marathi Wikisource	https://mr.wikisource.org/
+464	fawikivoyage	wikivoyage	Persian Wikivoyage	https://fa.wikivoyage.org/
+465	liwikisource	wikisource	Limburgish Wikisource	https://li.wikisource.org/
+466	fiwikibooks	wikibooks	Finnish Wikibooks	https://fi.wikibooks.org/
+467	dawikibooks	wikibooks	Danish Wikibooks	https://da.wikibooks.org/
+468	mediawikiwiki	mediawiki	MediaWiki.org	https://www.mediawiki.org/
+469	jawikinews	wikinews	Japanese Wikinews	https://ja.wikinews.org/
+470	skwikisource	wikisource	Slovak Wikisource	https://sk.wikisource.org/
+471	huwikibooks	wikibooks	Hungarian Wikibooks	https://hu.wikibooks.org/
+472	slwikiversity	wikiversity	Slovene Wikiversity	https://sl.wikiversity.org/
+473	orwikisource	wikisource	Odia Wikisource	https://or.wikisource.org/
+474	ukwikibooks	wikibooks	Ukrainian Wikibooks	https://uk.wikibooks.org/
+475	aswikisource	wikisource	Assamese Wikisource	https://as.wikisource.org/
+476	cywikisource	wikisource	Welsh Wikisource	https://cy.wikisource.org/
+477	viwikivoyage	wikivoyage	Vietnamese Wikivoyage	https://vi.wikivoyage.org/
+478	bswikinews	wikinews	Bosnian Wikinews	https://bs.wikinews.org/
+512	tawikinews	wikinews	Tamil Wikinews	https://ta.wikinews.org/
+513	bewikibooks	wikibooks	Belarusian Wikibooks	https://be.wikibooks.org/
+514	wikidatawiki	wikidata	Wikidata	https://www.wikidata.org/
+516	tgwikibooks	wikibooks	Tajik Wikibooks	https://tg.wikibooks.org/
+517	dtywiki	wikipedia	Doteli Wikipedia	https://dty.wikipedia.org/
+518	enwikiversity	wikiversity	English Wikiversity	https://en.wikiversity.org/
+519	zhwikivoyage	wikivoyage	Chinese Wikivoyage	https://zh.wikivoyage.org/
+520	kbpwiki	wikipedia	Kabiye Wikipedia	https://kbp.wikipedia.org/
+521	atjwiki	wikipedia	Atikamekw Wikipedia	https://atj.wikipedia.org/
+523	nlwikinews	wikinews	Dutch Wikinews	https://nl.wikinews.org/
+524	dinwiki	wikipedia	Dinka Wikipedia	https://din.wikipedia.org/
+525	elwikibooks	wikibooks	Greek Wikibooks	https://el.wikibooks.org/
+526	enwiktionary	wiktionary	English Wiktionary	https://en.wiktionary.org/
+527	hewiktionary	wiktionary	Hebrew Wiktionary	https://he.wiktionary.org/
+528	tawiktionary	wiktionary	Tamil Wiktionary	https://ta.wiktionary.org/
+529	guwiktionary	wiktionary	Gujarati Wiktionary	https://gu.wiktionary.org/
+531	euwikibooks	wikibooks	Basque Wikibooks	https://eu.wikibooks.org/
+532	urwikibooks	wikibooks	Urdu Wikibooks	https://ur.wikibooks.org/
+534	hrwiktionary	wiktionary	Croatian Wiktionary	https://hr.wiktionary.org/
+535	eswikibooks	wikibooks	Spanish Wikibooks	https://es.wikibooks.org/
+536	ruwikibooks	wikibooks	Russian Wikibooks	https://ru.wikibooks.org/
+538	itwikivoyage	wikivoyage	Italian Wikivoyage	https://it.wikivoyage.org/
+539	wawiktionary	wiktionary	Walloon Wiktionary	https://wa.wiktionary.org/
+540	hewikibooks	wikibooks	Hebrew Wikibooks	https://he.wikibooks.org/
+541	kkwikibooks	wikibooks	Kazakh Wikibooks	https://kk.wikibooks.org/
+542	pswiktionary	wiktionary	Pashto Wiktionary	https://ps.wiktionary.org/
+544	gorwiki	wikipedia	Gorontalo Wikipedia	https://gor.wikipedia.org/
+545	lfnwiki	wikipedia	Lingua Franca Nova Wikipedia	https://lfn.wikipedia.org/
+546	inhwiki	wikipedia	Ingush Wikipedia	https://inh.wikipedia.org/
+547	euwikisource	wikisource	Basque Wikisource	https://eu.wikisource.org/
+548	knwikisource	wikisource	Kannada Wikisource	https://kn.wikisource.org/
+551	pmswikisource	wikisource	Piedmontese Wikisource	https://pms.wikisource.org/
+552	howiki	wikipedia	Hiri Motu Wikipedia	https://ho.wikipedia.org/
+554	satwiki	wikipedia	Santali Wikipedia	https://sat.wikipedia.org/
+555	elwikivoyage	wikivoyage	Greek Wikivoyage	https://el.wikivoyage.org/
+556	mswikibooks	wikibooks	Malay Wikibooks	https://ms.wikibooks.org/
+557	sahwikiquote	wikiquote	Sakha Wikiquote	https://sah.wikiquote.org/
+558	zhwikibooks	wikibooks	Chinese Wikibooks	https://zh.wikibooks.org/
+562	shnwiki	wikipedia	Shan Wikipedia	https://shn.wikipedia.org/
+563	kowikiversity	wikiversity	Korean Wikiversity	https://ko.wikiversity.org/
+564	dewiktionary	wiktionary	German Wiktionary	https://de.wiktionary.org/
+565	hywwiki	wikipedia	Western Armenian Wikipedia	https://hyw.wikipedia.org/
+566	cswikibooks	wikibooks	Czech Wikibooks	https://cs.wikibooks.org/
+567	zhwikiversity	wikiversity	Chinese Wikiversity	https://zh.wikiversity.org/
+568	sourceswiki	wikisource	Multilingual Wikisource	https://mul.wikisource.org
+569	pawikisource	wikisource	Punjabi Wikisource	https://pa.wikisource.org/
+570	fawiktionary	wiktionary	Persian Wiktionary	https://fa.wiktionary.org/
+571	slwikibooks	wikibooks	Slovenian Wikibooks	https://sl.wikibooks.org/
+572	thwikibooks	wikibooks	Thai Wikibooks	https://th.wikibooks.org/
+573	tlwikibooks	wikibooks	Tagalog Wikibooks	https://tl.wikibooks.org/
+574	napwikisource	wikisource	Neapolitan Wikisource	https://nap.wikisource.org/
+575	bgwikinews	wikinews	Bulgarian Wikinews	https://bg.wikinews.org/
+576	nqowiki	wikipedia	N'Ko Wikipedia	https://nqo.wikipedia.org/
+577	banwiki	wikipedia	Balinese Wikipedia	https://ban.wikipedia.org/
+578	hiwikisource	wikisource	Hindi Wikisource	https://hi.wikisource.org/
+580	gcrwiki	wikipedia	Guianan Creole Wikipedia	https://gcr.wikipedia.org/
+581	mnwwiki	wikipedia	Mon Wikipedia	https://mnw.wikipedia.org/
+582	szywiki	wikipedia	Sakizaya Wikipedia	https://szy.wikipedia.org/
+583	incubatorwiki		Wikimedia Incubator	https://incubator.wikimedia.org/
+584	wikimaniawiki		Wikimania	https://wikimania.wikimedia.org/ https://w.wiki/TH
+585	ptwikiversity	wikiversity	Portuguese Wikiversity	https://pt.wikiversity.org/
+586	plwiktionary	wiktionary	Polish Wiktionary	https://pl.wiktionary.org/
+587	ruwiktionary	wiktionary	Russian Wiktionary	https://ru.wiktionary.org/
+588	frwiktionary	wiktionary	French Wiktionary	https://fr.wiktionary.org/
+589	ttwikibooks	wikibooks	Tatar Wikibooks	https://tt.wikibooks.org/
+590	awawiki	wikipedia	Awadhi Wikipedia	https://awa.wikipedia.org/
+591	bawikibooks	wikibooks	Bashkir Wikibooks	https://ba.wikibooks.org/
+592	arywiki	wikipedia	Moroccan Arabic Wikipedia	https://ary.wikipedia.org
+593	avkwiki	wikipedia	Kotava Wikipedia	https://avk.wikipedia.org
+594	lijwikisource	wikisource	Ligurian Wikisource	https://lij.wikisource.org
+596	lldwiki	wikipedia	Ladin Wikipedia	https://lld.wikipedia.org
