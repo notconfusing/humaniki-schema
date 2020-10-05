@@ -21,3 +21,7 @@
 
 ### starting mysql server
 docker start some-mysql
+
+### sql config
+in my.cnf
+secure-file-priv= ""
