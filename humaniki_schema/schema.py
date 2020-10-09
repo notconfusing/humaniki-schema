@@ -8,6 +8,7 @@ from sqlalchemy.orm import relationship
 from sqlalchemy import create_engine
 import sqlalchemy
 import datetime
+import humaniki_schema.utils as hs_utils
 
 Base = declarative_base()
 
@@ -31,19 +32,30 @@ class metric(Base):
     bias_value          = Column(Integer)
     total               = Column(Integer)
 
+    def to_dict(self):
+        return {"fill_id": self.fill_id,
+                "population_id": hs_utils.PopulationDefinition(self.population_id).name,
+                "properties_id": self.properties_id,
+                "aggregations_id": self.aggregations_id,
+                "bias_value": self.bias_value,
+                "total": self.total,
+                }
 
 class metric_properties_j(Base):
     __tablename__ = 'metric_properties_j'
     id                  = Column(Integer, primary_key=True)
-    properties          = Column(JSON) # list of p-values of the properties in ascending order # might want SET
+    bias_property       = Column(Integer) # the bias property, eg gender
+    properties          = Column(JSON) # list of p-values of the properties in ascending order
     properties_len      = Column(TINYINT)
-
+    # TODO consider adding bias_id, rather than storing in json
 
 class metric_aggregations_j(Base):
     __tablename__ = 'metric_aggregations_j'
     id                  = Column(Integer, primary_key=True)
+    bias_value          = Column(Integer) # is the value of the bias property
     aggregations        = Column(JSON) # ordered list to zip with properties to get {property:val}
     aggregations_len    = Column(TINYINT)
+    # TODO consider adding bias_id, rather than storing in json
 
 
 class metric_properties_n(Base):
