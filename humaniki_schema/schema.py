@@ -47,7 +47,7 @@ class metric_properties_j(Base):
     bias_property       = Column(Integer) # the bias property, eg gender
     properties          = Column(JSON) # list of p-values of the properties in ascending order
     properties_len      = Column(TINYINT)
-    # TODO consider adding bias_id, rather than storing in json
+
 
 class metric_aggregations_j(Base):
     __tablename__ = 'metric_aggregations_j'
@@ -55,13 +55,13 @@ class metric_aggregations_j(Base):
     bias_value          = Column(Integer) # is the value of the bias property
     aggregations        = Column(JSON) # ordered list to zip with properties to get {property:val}
     aggregations_len    = Column(TINYINT)
-    # TODO consider adding bias_id, rather than storing in json
 
 
 class metric_properties_n(Base):
     __tablename__ = 'metric_properties_n'
     id                  = Column(Integer, primary_key=True)
     property            = Column(Integer, primary_key=True)
+    property_order      = Column(TINYINT, primary_key=True)
 
 
 class metric_aggregations_n(Base):
@@ -69,6 +69,7 @@ class metric_aggregations_n(Base):
     id                  = Column(Integer, primary_key=True)
     property            = Column(Integer, primary_key=True)
     value               = Column(Integer, primary_key=True)
+    aggregation_order   = Column(Integer, primary_key=True)
 
 
 class metric_coverage(Base):
@@ -90,9 +91,9 @@ class human(Base):
 
 class human_country(Base):
     __tablename__ = 'human_country'
-    fill_id       = Column(Integer, primary_key=True)
+    fill_id            = Column(Integer, primary_key=True)
     human_id           = Column(Integer, primary_key=True)
-    country       = Column(Integer, primary_key=True)
+    country            = Column(Integer, primary_key=True)
 
 class human_occupation(Base):
     __tablename__ = 'human_occupation'
@@ -128,6 +129,7 @@ class label(Base):
     qid                = Column(Integer)
     lang               = Column(VARCHAR(32))
     label              = Column(VARCHAR(512)) # OR TINYTEXT
+    property           = Column(Integer, index=True)
 
 
 class project(Base):
