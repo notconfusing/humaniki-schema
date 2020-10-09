@@ -14,3 +14,5 @@ alembic\.ini
 \.env
 
 humaniki_schema/\.ipynb_checkpoints/
+
+humaniki_schema\.egg-info/
