@@ -14,8 +14,8 @@ lxml = "*"
 PySocks = "*"
 alembic = "*"
 mysqlclient = "*"
-humaniki-schema = {editable = true,version = "*"}
 pandas = "*"
+humaniki-schema = {editable = true, path = "."}
 
 [requires]
 python_version = "3.7"

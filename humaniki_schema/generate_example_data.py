@@ -63,8 +63,10 @@ num_fills = 2
 fills = make_fills(num_fills)
 curr_fill = fills[num_fills-1].id
 
-example_len = 500# you must have created these dataset
-
+# example_len = 500# you must have created these dataset
+# example_len = 10# you must have created these dataset
+example_len = os.getenv("example_data_len")
+# print(f"example_len is{example_len}")
 def make_humans():
     humans_f = os.path.join(data_dir, f'denelezh_humans_{example_len}.tsv')
     humans_df = pd.read_csv(humans_f, sep='\t').rename(columns={"birthyear": 'year_of_birth'})
@@ -330,3 +332,4 @@ metrics = insert_single_prop_metrics(bias=hs_utils.Properties.GENDER, prop=hs_ut
 
 db_session.add_all(metrics)
 db_session.commit()
+print("done")
