@@ -1,4 +1,5 @@
 import sys
+import time
 
 from sqlalchemy import create_engine, func, and_, or_
 from sqlalchemy.orm import sessionmaker
@@ -151,12 +152,14 @@ def create_sitelink_metrics(curr_fill):
     proj_metric_res = sitelink_metric_q.all()
     print(f'made {len(proj_metric_res)} sitelink metrics')
     metrics = insert_single_prop_metrics(bias=hs_utils.Properties.GENDER, prop=hs_utils.Properties.PROJECT,
-                                         metric_rows=proj_metric_res)
+                                         metric_rows=proj_metric_res, curr_fill=curr_fill)
 
     db_session.add_all(metrics)
     db_session.commit()
+    return metrics
 
-def insert_single_prop_metrics(bias, prop, metric_rows):
+
+def insert_single_prop_metrics(bias, prop, metric_rows, curr_fill):
     sf_metrics = []
     for gender, prop_val, count in metric_rows:
         agg_vals_id = get_or_create_agg_vals(gender, [prop_val])
@@ -175,11 +178,23 @@ def insert_single_prop_metrics(bias, prop, metric_rows):
     return sf_metrics
 
 
-if __name__ == '__main__':
-    data_dir = os.getenv('HUMANIKI_EXMAPLE_DATADIR', 'example_data')
-    num_fills = os.getenv('HUMANIKI_EXAMPLE_FILLS', 2)
-    example_len = os.getenv('HUMANIKI_EXAMPLE_LEN', 10)
+def generate_all(data_dir=None, num_fills=None, example_len=None):
+    start_time = time.time()
+
+    if not data_dir:
+        data_dir = os.getenv('HUMANIKI_EXMAPLE_DATADIR', 'example_data')
+    if not num_fills:
+        num_fills = os.getenv('HUMANIKI_EXAMPLE_FILLS', 2)
+    if not example_len:
+        example_len = os.getenv('HUMANIKI_EXAMPLE_LEN', 10)
 
     curr_fill = insert_data(data_dir=data_dir, num_fills=num_fills, example_len=example_len)
 
-    create_sitelink_metrics(curr_fill)
+    slm = create_sitelink_metrics(curr_fill)
+    print(f'created sitelink metrics that have len {len(slm)}')
+    end_time = time.time()
+    print(f'Generating data took {end_time-start_time} seconds')
+    return True
+
+if __name__ == '__main__':
+    generate_all()

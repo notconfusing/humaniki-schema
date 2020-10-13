@@ -169,7 +169,7 @@ def insert_data(data_dir='example_data', example_len=10, num_fills=2):
                                        data_dir=data_dir,
                                        fills=None,
                                        extra_const_cols={'lang':'fr', 'type':'project'})
-    print(f'inserted: {len(labels_misc)} labels_misc fake french')
+    print(f'inserted: {len(labels_misc_fr)} labels_misc fake french')
     projects = make_table_exactly_from_file(fname='denelezh_project.tsv',
                                             schema_table=project,
                                             table_tsv_map={'type': 'type', 'code': 'code', 'label': 'label',

@@ -16,6 +16,7 @@ alembic = "*"
 mysqlclient = "*"
 humaniki-schema = {editable = true,version = "*"}
 pandas = "*"
+pytest = "*"
 
 [requires]
 python_version = "3.7"
