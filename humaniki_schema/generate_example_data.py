@@ -9,6 +9,7 @@ import os
 # from humaniki_schema.schema import fill, human, human_country, human_occupation, human_property, human_sitelink, label, \
 #                                     metric, metric_aggregations, metric_coverage, metric_properties
 from humaniki_schema.generate_insert import insert_data
+from humaniki_schema.queries import get_properties_obj, get_aggregations_obj
 from humaniki_schema.schema import fill, human, human_country, human_occupation, human_property, human_sitelink, label, \
     metric, metric_properties_j, metric_properties_n, metric_aggregations_j, metric_aggregations_n, metric_coverage, \
     project
@@ -20,12 +21,11 @@ try:
 except ImportError:
     raise ImportError('For this script at least we need pandas')
 
-data_dir = 'example_data'
-
 from humaniki_schema.db import session_factory
 from humaniki_schema.db import engine as db_engine
 
 db_session = session_factory()
+
 
 # ## metrics
 # 1. geographic metric
@@ -56,33 +56,33 @@ def get_or_create_agg_vals(bias_value, agg_vals):
         return a_metric_aggregation.id
     else:
         assert len(agg_vals_rec) == 1
-        return agg_vals_rec[0][0] #the first column of the first row, hopefully the id
+        return agg_vals_rec[0][0]  # the first column of the first row, hopefully the id
 
 
-def get_or_create_metric_props(bias_property, metric_props):
-    #     metric_props_rec = db_session.query(metric_properties).filter_by(properties=metric_props).one_or_none()
-    metric_equals_parts = [f"and json_extract(properties, '$[{pos}]')={val}" for pos, val in enumerate(metric_props)]
-
-    metric_equals_sql = f'''select id, properties from metric_properties_j where
-                        properties_len={len(metric_props)}
-                        and bias_property={bias_property}
-                        {' '.join(metric_equals_parts)}
-                        ;
-                        '''
-    #     print(metric_equals_sql)
-    metric_props_rec = db_engine.execute(metric_equals_sql).fetchall()
-    if not metric_props_rec:
-        #         print(metric_props)
-        a_metric_properties = metric_properties_j(properties=metric_props,
-                                                    properties_len=len(metric_props),
-                                                  bias_property=bias_property)
-        db_session.rollback()
-        db_session.add(a_metric_properties)
-        db_session.commit()
-        return a_metric_properties.id
-    else:
-        assert len(metric_props_rec) == 1
-        return metric_props_rec[0][0] #the first column of the first row, hopefully the id
+# def get_or_create_metric_props(bias_property, metric_props):
+#     #     metric_props_rec = db_session.query(metric_properties).filter_by(properties=metric_props).one_or_none()
+#     metric_equals_parts = [f"and json_extract(properties, '$[{pos}]')={val}" for pos, val in enumerate(metric_props)]
+#
+#     metric_equals_sql = f'''select id, properties from metric_properties_j where
+#                         properties_len={len(metric_props)}
+#                         and bias_property={bias_property}
+#                         {' '.join(metric_equals_parts)}
+#                         ;
+#                         '''
+#     #     print(metric_equals_sql)
+#     metric_props_rec = db_engine.execute(metric_equals_sql).fetchall()
+#     if not metric_props_rec:
+#         #         print(metric_props)
+#         a_metric_properties = metric_properties_j(properties=metric_props,
+#                                                     properties_len=len(metric_props),
+#                                                   bias_property=bias_property)
+#         db_session.rollback()
+#         db_session.add(a_metric_properties)
+#         db_session.commit()
+#         return a_metric_properties.id
+#     else:
+#         assert len(metric_props_rec) == 1
+#         return metric_props_rec[0][0] #the first column of the first row, hopefully the id
 
 # def generate_geo_metrics():
 #     geo_metric_q = db_session.query(human.gender, human_country.country, func.count(human.gender))     .join(human_country, and_(human.qid==human_country.human_id, human.fill_id==human_country.fill_id))    .filter(human.fill_id==curr_fill)    .group_by(human_country.country, human.gender)
@@ -141,11 +141,11 @@ def get_or_create_metric_props(bias_property, metric_props):
 # proj_metric_strs, proj_metric_res = generate_single_facet_metric(human_sitelink, human_sitelink.sitelink)
 
 
-
 def create_sitelink_metrics(curr_fill):
     sitelink_metric_q = db_session.query(human.gender, human_sitelink.sitelink, func.count(human.gender)).join(
-        human_sitelink, and_(human.qid == human_sitelink.human_id, human.fill_id == human_sitelink.fill_id)).join(project,
-                                                                                                                  human_sitelink.sitelink == project.code).filter(
+        human_sitelink, and_(human.qid == human_sitelink.human_id, human.fill_id == human_sitelink.fill_id)).join(
+        project,
+        human_sitelink.sitelink == project.code).filter(
         human.fill_id == curr_fill).filter(project.type == 'wikipedia').group_by(human_sitelink.sitelink, human.gender)
 
     print('making metrics')
@@ -162,9 +162,13 @@ def create_sitelink_metrics(curr_fill):
 def insert_single_prop_metrics(bias, prop, metric_rows, curr_fill):
     sf_metrics = []
     for gender, prop_val, count in metric_rows:
-        agg_vals_id = get_or_create_agg_vals(gender, [prop_val])
         props_pid = prop.value
-        m_props_id = get_or_create_metric_props(bias.value, [props_pid])
+        agg_vals = get_aggregations_obj(bias_value={bias.value: gender}, dimension_values={props_pid: prop_val},
+                                        session=db_session, create_if_no_exist=True)
+        agg_vals_id = agg_vals.id
+        m_props = get_properties_obj(bias_property=bias.value, dimension_properties=[props_pid], session=db_session,
+                                     create_if_no_exist=True)
+        m_props_id = m_props.id
         fills_id = curr_fill
         #         db_session.rollback()
         a_metric = metric(fill_id=fills_id,
@@ -195,6 +199,7 @@ def generate_all(data_dir=None, num_fills=None, example_len=None):
     end_time = time.time()
     print(f'Generating data took {end_time-start_time} seconds')
     return True
+
 
 if __name__ == '__main__':
     generate_all()
