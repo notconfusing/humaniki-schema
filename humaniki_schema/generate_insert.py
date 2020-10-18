@@ -170,6 +170,14 @@ def insert_data(data_dir='example_data', example_len=10, num_fills=2):
                                        fills=None,
                                        extra_const_cols={'lang':'fr', 'type':'project'})
     print(f'inserted: {len(labels_misc_fr)} labels_misc fake french')
+    country_misc_iso = make_table_exactly_from_file(fname='wdqs_country_labels_iso.tsv',
+                                            schema_table=label_misc,
+                                            table_tsv_map={'src': 'id', 'label': 'label',
+                                                           'lang': 'lang'},
+                                            data_dir=data_dir,
+                                            fills=None,
+                                                    extra_const_cols={'type':'iso'})
+    print(f'inserted: {len(country_misc_iso)} country_misc_iso')
     projects = make_table_exactly_from_file(fname='denelezh_project.tsv',
                                             schema_table=project,
                                             table_tsv_map={'type': 'type', 'code': 'code', 'label': 'label',
@@ -177,4 +185,25 @@ def insert_data(data_dir='example_data', example_len=10, num_fills=2):
                                             data_dir=data_dir,
                                             fills=None)
     print(f'inserted: {len(projects)} projects')
+    country_fr = make_table_exactly_from_file(fname='wdqs_country_labels_fr.tsv',
+                                            schema_table=label,
+                                            table_tsv_map={'qid': 'id', 'label': 'label',
+                                                           'lang': 'lang'},
+                                            data_dir=data_dir,
+                                            fills=None)
+    print(f'inserted: {len(country_fr)} country_fr')
+    country_en = make_table_exactly_from_file(fname='wdqs_country_labels_en.tsv',
+                                            schema_table=label,
+                                            table_tsv_map={'qid': 'id', 'label': 'label',
+                                                           'lang': 'lang'},
+                                            data_dir=data_dir,
+                                            fills=None)
+    print(f'inserted: {len(country_en)} country_en')
+    country_iso = make_table_exactly_from_file(fname='wdqs_country_labels_iso.tsv',
+                                            schema_table=label,
+                                            table_tsv_map={'qid': 'id', 'label': 'label',
+                                                           'lang': 'lang'},
+                                            data_dir=data_dir,
+                                            fills=None)
+    print(f'inserted: {len(country_iso)} country_iso')
     return curr_fill
