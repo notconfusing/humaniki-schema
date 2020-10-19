@@ -8,9 +8,8 @@ import datetime
 import json
 import os
 
-from humaniki_backend.query import get_latest_fill_id
 from humaniki_schema.generate_insert import insert_data
-from humaniki_schema.queries import get_properties_obj, get_aggregations_obj
+from humaniki_schema.queries import get_properties_obj, get_aggregations_obj, get_latest_fill_id
 from humaniki_schema.schema import fill, human, human_country, human_occupation, human_property, human_sitelink, label, \
     metric, metric_properties_j, metric_properties_n, metric_aggregations_j, metric_aggregations_n, metric_coverage, \
     project

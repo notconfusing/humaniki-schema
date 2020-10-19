@@ -173,10 +173,10 @@ def insert_data(data_dir='example_data', example_len=10, num_fills=2):
     country_misc_iso = make_table_exactly_from_file(fname='wdqs_country_labels_iso.tsv',
                                             schema_table=label_misc,
                                             table_tsv_map={'src': 'id', 'label': 'label',
-                                                           'lang': 'lang'},
+                                                           'lang': 'lang', 'type':'type'},
                                             data_dir=data_dir,
                                             fills=None,
-                                                    extra_const_cols={'type':'iso'})
+                                                    extra_const_cols={'type':'iso_3166'})
     print(f'inserted: {len(country_misc_iso)} country_misc_iso')
     projects = make_table_exactly_from_file(fname='denelezh_project.tsv',
                                             schema_table=project,

@@ -201,3 +201,16 @@ def get_project_internal_id_from_wikiencoding(wikiencoding, session):
     # TODO maybe I should just set up a massive enum for this.
     project_q = session.query(project.id).filter_by(code=wikiencoding)
     return project_q.scalar()
+
+
+def get_latest_fill_id(session):
+    latest_q = session.query(func.max(fill.date)).subquery()
+    q = session.query(fill.id, fill.date).filter(fill.date == latest_q)
+    latest_fill_id, latest_fill_date = q.one()
+    return latest_fill_id, latest_fill_date
+
+
+def get_exact_fill_id(session, exact_fill_dt):
+    q = session.query(fill.id, fill.date).filter(fill.date == exact_fill_dt)
+    fill_id, fill_date = q.one()
+    return fill_id, fill_date
