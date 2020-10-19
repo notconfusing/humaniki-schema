@@ -1,0 +1,11 @@
+generation:
+  example:
+    datadir: ~/workspace/humaniki-schema/humaniki_schema/example_data
+    len: 10
+    fills: 1
+#  skip_steps:
+#    - insert
+#    - sitelinks
+test:
+  test_datadir: ~/workspace/humaniki-backend/tests/test_data
+  skip_gen: false
