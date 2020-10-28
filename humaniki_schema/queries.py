@@ -1,6 +1,8 @@
 import sqlalchemy
 
 from sqlalchemy import create_engine, func, and_, or_
+from sqlalchemy.orm import aliased
+
 from humaniki_schema.generate_insert import insert_data
 from humaniki_schema.schema import fill, human, human_country, human_occupation, human_property, human_sitelink, label, \
     metric, metric_properties_j, metric_properties_n, metric_aggregations_j, metric_aggregations_n, metric_coverage, \
@@ -64,7 +66,8 @@ def get_aggregations_obj(bias_value, dimension_values, session=None, table=metri
         return get_aggregations_obj_json(bias_value, dimension_values, session, as_subquery,
                                          create_if_no_exist)
     elif table == metric_aggregations_n:
-        raise NotImplementedError('Coming soon if needed')
+        return get_aggregations_obj_normal(bias_value, dimension_values, session, as_subquery,
+                                           create_if_no_exist)
 
 
 def create_properties_obj(bias_property, dimension_properties, session):
@@ -128,7 +131,7 @@ def get_aggregations_obj_json(bias_value, dimension_values, session, as_subquery
     else:
         aggregations_id_q = session.query(metric_aggregations_j)
 
-    # add the dimensional values
+    # add the dimensional constraints
     # recall that in python 3.7+ dictionaries keep insertion order
     dimension_val_list = dimension_values.values() if isinstance(dimension_values, dict) else dimension_values
 
@@ -142,6 +145,58 @@ def get_aggregations_obj_json(bias_value, dimension_values, session, as_subquery
     if as_subquery:
         return aggregations_id_q.subquery('aggs')
 
+    aggregations_id_objs = aggregations_id_q.all()
+    if len(aggregations_id_objs) > 0:
+        return aggregations_id_objs
+    else:
+        if create_if_no_exist:
+            return create_aggregations_obj(bias_value, dimension_values, session)
+        else:
+            return aggregations_id_objs  # return a known empty list
+
+
+def get_aggregations_obj_normal(bias_value, dimension_values, session, as_subquery, create_if_no_exist):
+    """
+    """
+    #  please check that at least one of bias_value or dimension_values is nonempty.
+    assert not ((bias_value is None) and (dimension_values is None))
+    if bias_value is not None:
+        # there may or may not be a limitation on the bias value
+        if isinstance(bias_value, dict):
+            bias_prop, bias_qid = list(bias_value.items())[0][0][1]
+        else:
+            # guessing we are taking a shortcut and just have the qid, and we're still in the gender realm
+            # TODO never come here
+            bias_prop, bias_qid = 21, bias_value
+    else:
+        bias_prop, bias_value = None, None
+
+    dimension_val_list = [(bias_prop, bias_value)]
+
+    # add the dimensional constraints
+    # recall that in python 3.7+ dictionaries keep insertion order
+    if isinstance(dimension_values, dict):
+        dimension_val_list += list(dimension_values.items())
+    else:
+       raise ReferenceError("I don't know what you're attempting to query on")
+
+    # build the query with an accumulator pattern
+    aggregations_id_q = session.query(metric_aggregations_n)
+    for pos, (agg_prop, agg_val) in enumerate(dimension_val_list):
+        # these all strings come
+        if agg_val == 'all' or agg_val is None:
+            continue  # hope there is no value called all
+        else:
+            a_man = aliased(metric_aggregations_n)
+            aggregations_id_q = aggregations_id_q.join(a_man, metric_aggregations_n.id == a_man.id) \
+                .filter(a_man.property == agg_prop)\
+                .filter(a_man.value == agg_val) \
+                .filter(a_man.aggregation_order == pos)
+
+    if as_subquery:
+        return aggregations_id_q.subquery('aggs')
+
+    print(aggregations_id_q)
     aggregations_id_objs = aggregations_id_q.all()
     if len(aggregations_id_objs) > 0:
         return aggregations_id_objs
