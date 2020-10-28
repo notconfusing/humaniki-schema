@@ -22,7 +22,26 @@ import numpy as np
 db_session = session_factory()
 
 
+def create_dob_metrics(curr_fill):
+    # details for abstraction
+    # dimension column: in this case its also in humans and doesn't require a join
+    # checking that the dimension is not null
+    # then then seperately the property we're using (which is isomorphic data)
+    dob_metric_q = db_session.query(human.gender, human.year_of_birth, func.count(human.gender)) \
+        .filter(human.year_of_birth.isnot(None)) \
+        .group_by(human.year_of_birth, human.gender)
+
+    print('making metrics')
+    dob_metric_res = dob_metric_q.all()
+    print(f'made {len(dob_metric_res)} dob metrics')
+    metrics = insert_single_prop_metrics(bias=hs_utils.Properties.GENDER, prop=hs_utils.Properties.DATE_OF_BIRTH,
+                                         metric_rows=dob_metric_res, curr_fill=curr_fill)
+    return metrics
+
+
 def create_sitelink_metrics(curr_fill):
+    # this requires a third join to filter just for wikipedia types (but not sure its desirable long term)
+    #
     sitelink_metric_q = db_session.query(human.gender, human_sitelink.sitelink, func.count(human.gender)).join(
         human_sitelink, and_(human.qid == human_sitelink.human_id, human.fill_id == human_sitelink.fill_id)).join(
         project,
@@ -52,6 +71,7 @@ def create_geo_metrics(curr_fill):
 
 def insert_single_prop_metrics(bias, prop, metric_rows, curr_fill):
     sf_metrics = []
+    aggregation_props_gathering_start = time.time()
     for gender, prop_val, count in metric_rows:
         props_pid = prop.value
         agg_vals_obj = get_aggregations_obj(bias_value={bias.value: gender}, dimension_values={props_pid: prop_val},
@@ -75,6 +95,7 @@ def insert_single_prop_metrics(bias, prop, metric_rows, curr_fill):
                           total=count)
         sf_metrics.append(a_metric)
 
+    aggregation_props_gathering_end = time.time()
     insertion_start = time.time()
     # try:
     #     db_session.bulk_save_objects(sf_metrics)
@@ -85,6 +106,7 @@ def insert_single_prop_metrics(bias, prop, metric_rows, curr_fill):
     db_session.add_all(sf_metrics)
     db_session.commit()
     insertion_end = time.time()
+    print(f'aggregation_props lookup took {aggregation_props_gathering_end-aggregation_props_gathering_start} seconds')
     print(f'inserting objects took {insertion_end-insertion_start} seconds')
 
     return sf_metrics
@@ -114,6 +136,12 @@ def generate_all(config=None):
     if 'sitelinks' not in skip_steps:
         slm = create_sitelink_metrics(curr_fill)
         print(f'created sitelink metrics that have len {len(slm)}')
+        end_time = time.time()
+        print(f'Generating data took {end_time-start_time} seconds')
+
+    if 'dob' not in skip_steps:
+        dobm = create_dob_metrics(curr_fill)
+        print(f'created date of birth metrics that have len {len(dobm)}')
         end_time = time.time()
         print(f'Generating data took {end_time-start_time} seconds')
 

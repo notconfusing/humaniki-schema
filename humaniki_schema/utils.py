@@ -11,6 +11,7 @@ HUMANIKI_SNAPSHOT_DATE_FMT = '%Y-%m-%d'
 def make_fill_dt(snapshot_str):
     return datetime.strptime(snapshot_str, HUMANIKI_SNAPSHOT_DATE_FMT)
 
+
 class Properties(Enum):
     PROJECT = 0 # faking this as P0
     CITIZENSHIP = 27
@@ -18,6 +19,7 @@ class Properties(Enum):
     DATE_OF_DEATH = 570
     OCCUPATION = 106
     GENDER = 21
+
 
 class FillType(Enum):
     DUMP = 1
