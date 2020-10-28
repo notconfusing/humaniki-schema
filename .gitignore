@@ -14,3 +14,9 @@ alembic\.ini
 humaniki_schema/\.ipynb_checkpoints/
 
 humaniki_schema\.egg-info/
+
+humaniki_schema/ipynb/\.ipynb_checkpoints/
+
+\.fast\.env
+
+config/dev\.yaml

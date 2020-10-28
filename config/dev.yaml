@@ -6,6 +6,8 @@ generation:
 #  skip_steps:
 #    - insert
 #    - sitelinks
+#    - geo
+
 test:
   test_datadir: ~/workspace/humaniki-backend/tests/test_data
   skip_gen: false
