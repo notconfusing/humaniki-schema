@@ -183,15 +183,23 @@ def get_aggregations_obj_normal(bias_value, dimension_values, session, as_subque
     # build the query with an accumulator pattern
     aggregations_id_q = session.query(metric_aggregations_n)
     for pos, (agg_prop, agg_val) in enumerate(dimension_val_list):
-        # these all strings come
+        # initialize an aliased table that we'll be joining on
+        a_man = aliased(metric_aggregations_n)
+        # these 'all' strings may come come
         if agg_val == 'all' or agg_val is None:
             continue  # hope there is no value called all
+        # in cases where we are searching a range we may get a function of the aliased table
+        elif callable(agg_val):
+            value_filter = agg_val(a_man.value)
+        # otherwise likely we are doing a straight comparison
         else:
-            a_man = aliased(metric_aggregations_n)
-            aggregations_id_q = aggregations_id_q.join(a_man, metric_aggregations_n.id == a_man.id) \
-                .filter(a_man.property == agg_prop)\
-                .filter(a_man.value == agg_val) \
-                .filter(a_man.aggregation_order == pos)
+            agg_val = get_exact_project_id(session, agg_val) if agg_prop == hs_utils.Properties.PROJECT.value else agg_val
+            value_filter = a_man.value == agg_val
+
+        aggregations_id_q = aggregations_id_q.join(a_man, metric_aggregations_n.id == a_man.id) \
+            .filter(a_man.property == agg_prop)\
+            .filter(value_filter) \
+            .filter(a_man.aggregation_order == pos)
 
     if as_subquery:
         return aggregations_id_q.subquery('aggs')
@@ -269,3 +277,9 @@ def get_exact_fill_id(session, exact_fill_dt):
     q = session.query(fill.id, fill.date).filter(fill.date == exact_fill_dt)
     fill_id, fill_date = q.one()
     return fill_id, fill_date
+
+
+def get_exact_project_id(session, exact_proj_code):
+    q = session.query(project.id).filter(project.code == exact_proj_code)
+    proj_id = q.scalar()
+    return proj_id
