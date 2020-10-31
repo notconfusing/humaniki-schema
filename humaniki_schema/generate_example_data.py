@@ -118,12 +118,12 @@ def get_agg_vals_id(bias_value, dimension_values):
         assert len(agg_vals_obj) == 1
         agg_vals_obj = agg_vals_obj[0]
     agg_vals_id = agg_vals_obj.id
-    return agg_vals_obj
+    return agg_vals_id
 
 def insert_metrics(bias, props, metric_rows, curr_fill, population_id=None):
     sf_metrics = []
     aggregation_props_gathering_start = time.time()
-    aggregation_getter = AggregationIdGetter(bias=bias, props=props)
+    # aggregation_getter = AggregationIdGetter(bias=bias, props=props)
     # these remain static
     prop_pids = [p.value for p in props] if isinstance(props, list) else [props.value] #backwards compatible for single dimension metrics
     m_props = get_properties_obj(bias_property=bias.value, dimension_properties=prop_pids, session=db_session, create_if_no_exist=True)
@@ -137,7 +137,7 @@ def insert_metrics(bias, props, metric_rows, curr_fill, population_id=None):
         if row_i%100==0:
             print(row_i)
         gender = row[0]
-        count = row[:1]
+        count = row[-1]
         prop_vals = row[1:-1]
         dimension_values = {prop_id: prop_val for prop_id, prop_val in zip(prop_pids, prop_vals)}
         agg_vals_id = get_agg_vals_id(bias_value={bias.value:gender},

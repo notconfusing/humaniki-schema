@@ -19,4 +19,4 @@ humaniki_schema/ipynb/\.ipynb_checkpoints/
 
 \.fast\.env
 
-config/dev\.yaml
+config/dev.yaml
