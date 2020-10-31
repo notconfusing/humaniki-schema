@@ -20,6 +20,8 @@ class Properties(Enum):
     OCCUPATION = 106
     GENDER = 21
 
+def order_props(props):
+    return sorted(props, key=lambda p: p.value)
 
 class FillType(Enum):
     DUMP = 1
