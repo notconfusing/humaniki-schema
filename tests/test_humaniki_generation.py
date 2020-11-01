@@ -18,7 +18,7 @@ session = db.session_factory()
 
 
 def insert_or_skip(config, session):
-    skip_insert = config['test']['skip_insert'] if 'skip_gen' in config['test'] else False
+    skip_insert = config['test']['skip_insert'] if 'skip_insert' in config['test'] else False
     if not skip_insert:
         data_dir = config['generation']['example']['datadir']
         num_fills = config['generation']['example']['fills']

@@ -9,7 +9,7 @@ import os
 from sqlalchemy.orm import aliased
 
 from humaniki_schema.generate_insert import insert_data
-from humaniki_schema.queries import get_properties_obj, get_aggregations_obj, get_latest_fill_id
+from humaniki_schema.queries import get_properties_obj, get_aggregations_obj, get_latest_fill_id, AggregationIdGetter
 from humaniki_schema.schema import fill, human, human_country, human_occupation, human_property, human_sitelink, label, \
     metric, metric_properties_j, metric_properties_n, metric_aggregations_j, metric_aggregations_n, metric_coverage, \
     project
@@ -83,25 +83,6 @@ def create_proj_cit_metrics(curr_fill):
     return metrics
 
 
-class AggregationIdGetter():
-    def __init__(self, bias, props):
-        self.bias = bias
-        self.props = hs_utils.order_props(props)
-        self.all_props = [bias] + props
-        # not sure if this should be in the init fn
-        self.get_all_known_aggregations_of_props()
-
-    def get_all_known_aggregations_of_props(self):
-        # need as n+1 many aliased versions of m_a_n as there are properties_ including gender
-        # the +1 comes from the fact that we need to verify that this is unique combination of ids
-        num_aliased_mans = len(self.all_props)+1
-        aliased_mans = [aliased(metric_aggregations_n, alias=f'a{i}') for i in range(num_aliased_mans)]
-        all_agg_q = db_session.query(aliased_mans[0]).filter(aliased_mans[0].id)
-
-    def lookup(self, bias_value, dimension_values):
-        return
-
-
 def get_agg_vals_id(bias_value, dimension_values):
     """
     get the aggregation id based on the aggregation values.
@@ -123,7 +104,8 @@ def get_agg_vals_id(bias_value, dimension_values):
 def insert_metrics(bias, props, metric_rows, curr_fill, population_id=None):
     sf_metrics = []
     aggregation_props_gathering_start = time.time()
-    # aggregation_getter = AggregationIdGetter(bias=bias, props=props)
+    aggregation_getter = AggregationIdGetter(bias=bias, props=props)
+    aggregation_getter.get_all_known_aggregations_of_props()
     # these remain static
     prop_pids = [p.value for p in props] if isinstance(props, list) else [props.value] #backwards compatible for single dimension metrics
     m_props = get_properties_obj(bias_property=bias.value, dimension_properties=prop_pids, session=db_session, create_if_no_exist=True)

@@ -178,7 +178,7 @@ def get_aggregations_obj_normal(bias_value, dimension_values, session, as_subque
     if isinstance(dimension_values, dict):
         dimension_val_list += list(dimension_values.items())
     else:
-       raise ReferenceError("I don't know what you're attempting to query on")
+        raise ReferenceError("I don't know what you're attempting to query on")
 
     # build the query with an accumulator pattern
     aggregations_id_q = session.query(metric_aggregations_n)
@@ -193,18 +193,19 @@ def get_aggregations_obj_normal(bias_value, dimension_values, session, as_subque
             value_filter = agg_val(a_man.value)
         # otherwise likely we are doing a straight comparison
         else:
-            agg_val = get_exact_project_id(session, agg_val) if agg_prop == hs_utils.Properties.PROJECT.value else agg_val
+            agg_val = get_exact_project_id(session,
+                                           agg_val) if agg_prop == hs_utils.Properties.PROJECT.value else agg_val
             value_filter = a_man.value == agg_val
 
         aggregations_id_q = aggregations_id_q.join(a_man, metric_aggregations_n.id == a_man.id) \
-            .filter(a_man.property == agg_prop)\
+            .filter(a_man.property == agg_prop) \
             .filter(value_filter) \
             .filter(a_man.aggregation_order == pos)
 
     if as_subquery:
         return aggregations_id_q.subquery('aggs')
 
-    print(aggregations_id_q)
+    # print(aggregations_id_q)
     aggregations_id_objs = aggregations_id_q.all()
     if len(aggregations_id_objs) > 0:
         return aggregations_id_objs
@@ -283,3 +284,66 @@ def get_exact_project_id(session, exact_proj_code):
     q = session.query(project.id).filter(project.code == exact_proj_code)
     proj_id = q.scalar()
     return proj_id
+
+
+class AggregationIdGetter():
+    """
+    Useful to get many aggregation ids via cacheing, like for inserting during generation
+    """
+
+    def __init__(self, bias, props, session=None):
+        self.bias = bias
+        self.props = hs_utils.order_props(props)
+        self.all_props = [bias] + props
+        self.props_values = [p.value for p in self.all_props]
+        # not sure if this should be in the init fn
+        self.session = session if session else session_factory()
+
+    def get_all_known_aggregations_of_props(self):
+        # need as n+1 many aliased versions of m_a_n as there are properties including gender
+        # the +1 comes from the fact that we need to verify that this is unique combination of ids
+        # build the query with an accumulator pattern
+        # select
+        #       *
+        #       from metric_aggregations_n a1
+        #       join metric_aggregations_n a2
+        #         on a1.id = a2.id
+        #       join metric_aggregations_n a3
+        #         on a2.id=a3.id
+        #       left outer join metric_aggregations_n a4
+        #         on a3.id=a4.id and a4.property not in (0,21,27)
+        #       where a1.property = 21
+        #         and a1.aggregation_order = 0
+        #         and a2.property = 0
+        #         and a2.aggregation_order = 1
+        #         and a3.property = 27
+        #         and a3.aggregation_order = 2
+        #         and a4.id is null
+
+        num_mans = len(self.all_props) + 1
+        # a_mans = [aliased(metric_aggregations_n, alias=f'a{i}') for i in range(num_mans)]
+        a_mans = [aliased(metric_aggregations_n) for i in range(num_mans)]
+        agg_q = self.session.query(*a_mans)
+        for i, a_man in enumerate(a_mans):
+            is_first_table = i == 0
+            is_last_table = i == num_mans-1
+
+            join_type = 'join' if not is_last_table else 'outerjoin'
+            # ie. a2.id = a1.id
+            default_join = a_mans[i-1].id == a_man.id
+            last_join = and_(default_join, ~a_man.property.in_(self.props_values))
+            join_statement = default_join if not is_last_table else last_join
+            where_statement = a_man.property == self.props_values[i] if not is_last_table else a_man.id == None
+            # add the join statement if it's not the first table
+            if not is_first_table:
+                agg_q = getattr(agg_q, join_type)(a_man, join_statement)
+            # always add the where statement
+            agg_q = agg_q.filter(where_statement)
+
+        known_aggregations = agg_q.all()
+        print(f'found {len(known_aggregations)} known aggregations')
+        self.known_aggregations = known_aggregations
+        return known_aggregations
+
+    def lookup(self, bias_value, dimension_values):
+        return
