@@ -35,7 +35,7 @@ def create_dob_metrics(curr_fill):
     print('making metrics')
     dob_metric_res = dob_metric_q.all()
     print(f'made {len(dob_metric_res)} dob metrics')
-    metrics = insert_metrics(bias=hs_utils.Properties.GENDER, prop=hs_utils.Properties.DATE_OF_BIRTH,
+    metrics = insert_metrics(bias=hs_utils.Properties.GENDER, props=[hs_utils.Properties.DATE_OF_BIRTH],
                              metric_rows=dob_metric_res, curr_fill=curr_fill)
     return metrics
 
@@ -51,7 +51,7 @@ def create_sitelink_metrics(curr_fill):
     print('making metrics')
     proj_metric_res = sitelink_metric_q.all()
     print(f'made {len(proj_metric_res)} sitelink metrics')
-    metrics = insert_metrics(bias=hs_utils.Properties.GENDER, prop=hs_utils.Properties.PROJECT,
+    metrics = insert_metrics(bias=hs_utils.Properties.GENDER, props=[hs_utils.Properties.PROJECT],
                              metric_rows=proj_metric_res, curr_fill=curr_fill)
     return metrics
 
@@ -64,7 +64,7 @@ def create_geo_metrics(curr_fill):
     print('making geo metrics')
     metric_res = metric_q.all()
     print(f'made {len(metric_res)} geo metrics')
-    metrics = insert_metrics(bias=hs_utils.Properties.GENDER, prop=hs_utils.Properties.CITIZENSHIP,
+    metrics = insert_metrics(bias=hs_utils.Properties.GENDER, props=[hs_utils.Properties.CITIZENSHIP],
                              metric_rows=metric_res, curr_fill=curr_fill)
     return metrics
 
@@ -122,8 +122,11 @@ def insert_metrics(bias, props, metric_rows, curr_fill, population_id=None):
         count = row[-1]
         prop_vals = row[1:-1]
         dimension_values = {prop_id: prop_val for prop_id, prop_val in zip(prop_pids, prop_vals)}
-        agg_vals_id = get_agg_vals_id(bias_value={bias.value:gender},
-                                      dimension_values=dimension_values)
+        bias_value={bias.value:gender}
+        # agg_vals_id = get_agg_vals_id(bias_value=bias_value,
+        #                               dimension_values=dimension_values)
+        agg_vals_id = aggregation_getter.lookup(bias_value=bias_value,
+                                                     dimension_values=dimension_values)
         a_metric = metric(fill_id=fills_id,
                           population_id=population_id,
                           properties_id=m_props_id,

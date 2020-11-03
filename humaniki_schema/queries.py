@@ -1,11 +1,10 @@
 import sqlalchemy
 
-from sqlalchemy import create_engine, func, and_, or_
+from sqlalchemy import func, and_
 from sqlalchemy.orm import aliased
 
-from humaniki_schema.generate_insert import insert_data
-from humaniki_schema.schema import fill, human, human_country, human_occupation, human_property, human_sitelink, label, \
-    metric, metric_properties_j, metric_properties_n, metric_aggregations_j, metric_aggregations_n, metric_coverage, \
+from humaniki_schema import utils as hs_utils
+from humaniki_schema.schema import fill, metric_properties_j, metric_properties_n, metric_aggregations_j, metric_aggregations_n, \
     project
 import humaniki_schema.utils as hs_utils
 
@@ -267,6 +266,15 @@ def get_project_internal_id_from_wikiencoding(wikiencoding, session):
     return project_q.scalar()
 
 
+def get_project_wikiencoding_from_id(session, internal_project_id=None):
+    project_q = session.query(project.id, project.code)
+    if internal_project_id:
+        project_q = project_q.filter(project.id==internal_project_id)
+        return project_q.scalar()
+    else: #getting all of these
+        return project_q.all()
+
+
 def get_latest_fill_id(session):
     latest_q = session.query(func.max(fill.date)).subquery()
     q = session.query(fill.id, fill.date).filter(fill.date == latest_q)
@@ -291,18 +299,20 @@ class AggregationIdGetter():
     Useful to get many aggregation ids via cacheing, like for inserting during generation
     """
 
-    def __init__(self, bias, props, session=None):
+    def __init__(self, bias, props, session=None, create_if_no_exist=True):
         self.bias = bias
         self.props = hs_utils.order_props(props)
         self.all_props = [bias] + props
         self.props_values = [p.value for p in self.all_props]
         # not sure if this should be in the init fn
         self.session = session if session else session_factory()
+        self._lookup_dict = {}
+        self.create_if_no_exist = create_if_no_exist
 
-    def get_all_known_aggregations_of_props(self):
+    def build_and_execute_all_aggregations_query(self):
         # need as n+1 many aliased versions of m_a_n as there are properties including gender
         # the +1 comes from the fact that we need to verify that this is unique combination of ids
-        # build the query with an accumulator pattern
+        # build the query with an accumulator pattern to make something looking like
         # select
         #       *
         #       from metric_aggregations_n a1
@@ -319,18 +329,17 @@ class AggregationIdGetter():
         #         and a3.property = 27
         #         and a3.aggregation_order = 2
         #         and a4.id is null
-
         num_mans = len(self.all_props) + 1
         # a_mans = [aliased(metric_aggregations_n, alias=f'a{i}') for i in range(num_mans)]
         a_mans = [aliased(metric_aggregations_n) for i in range(num_mans)]
         agg_q = self.session.query(*a_mans)
         for i, a_man in enumerate(a_mans):
             is_first_table = i == 0
-            is_last_table = i == num_mans-1
+            is_last_table = i == num_mans - 1
 
             join_type = 'join' if not is_last_table else 'outerjoin'
             # ie. a2.id = a1.id
-            default_join = a_mans[i-1].id == a_man.id
+            default_join = a_mans[i - 1].id == a_man.id
             last_join = and_(default_join, ~a_man.property.in_(self.props_values))
             join_statement = default_join if not is_last_table else last_join
             where_statement = a_man.property == self.props_values[i] if not is_last_table else a_man.id == None
@@ -341,9 +350,72 @@ class AggregationIdGetter():
             agg_q = agg_q.filter(where_statement)
 
         known_aggregations = agg_q.all()
-        print(f'found {len(known_aggregations)} known aggregations')
         self.known_aggregations = known_aggregations
         return known_aggregations
 
+    def build_all_aggregations_map(self, known_aggregations):
+        ## Note there may be some optimizations beyond dataframe
+        for wide_row in known_aggregations:
+            metric_aggregations_id, vals = self._get_man_row_parts(wide_row)
+            self._lookup_dict[vals] = metric_aggregations_id
+
+    def _get_man_row_parts(self, wide_row):
+        """
+        In comes a 'wide_row' which is a single row which consists of many metrics_aggregations_n columns. They should all share the same id. And the last should be null.
+        :param wide_row:
+        :return: nested dict {'val1':{'val2':{'valn':metric_aggregation_id}}}
+        """
+        assert wide_row[-1] is None # artifact of SQL unique query
+        wide_row = wide_row[:-1]
+        vals = tuple([man_obj.value for man_obj in wide_row])
+        metric_aggregations_id = wide_row[0].id
+        return metric_aggregations_id, vals
+
+        # CODE for nested dict instead of tuple as key
+        # reversed_wide_row = list(reversed(wide_row))
+        # assert reversed_wide_row[0] is None
+        # reversed_wide_row = reversed_wide_row[1:]
+        # metric_aggregations_id = reversed_wide_row[1].id
+        # build_up = None
+        # for man_obj in reversed_wide_row:
+        #     prop_val = man_obj.value
+        #     if build_up is None: # this indicates our first iteration through
+        #         build_up = {prop_val: metric_aggregations_id}
+        #     else:
+        #         build_up = {prop_val: build_up}
+        # return build_up
+
+    def build_project_wikiencoding(self):
+        project_code_id = get_project_wikiencoding_from_id(session=self.session, internal_project_id=None)
+        self.intenralcode_projcode = {p.id: p.code for p in project_code_id}
+
+    def convert_project_ids_to_wikicodes(self):
+        if hs_utils.Properties.PROJECT in self.props:
+            self.build_project_wikiencoding()
+            proj_position = self.all_props.index(hs_utils.Properties.PROJECT)
+            coded_tuples_to_add = {} #since can't add to dict as iterating over it
+            for agg_tuple, agg_id in self._lookup_dict.items():
+                coded_agg_tuple = tuple([e if i!= proj_position else self.intenralcode_projcode[e] for i, e in enumerate(agg_tuple)])
+                coded_tuples_to_add[coded_agg_tuple] = agg_id
+            # now add them back in
+            for coded_agg_tuple, agg_id in coded_tuples_to_add.items():
+                self._lookup_dict[coded_agg_tuple] = agg_id
+        else:# Nothing to do.
+            pass
+
     def lookup(self, bias_value, dimension_values):
-        return
+        full_lookup = {**bias_value, **dimension_values}
+        lookup_path = tuple(full_lookup.values())
+        try:
+            return self._lookup_dict[lookup_path]
+        except KeyError as ke:
+            if self.create_if_no_exist:
+                newly_created_obj = create_aggregations_obj(bias_value=bias_value, dimension_aggregations=dimension_values, session=self.session)
+                return newly_created_obj.id
+            else:
+                raise KeyError(ke)
+
+    def get_all_known_aggregations_of_props(self):
+        known_aggregations = self.build_and_execute_all_aggregations_query()
+        self.build_all_aggregations_map(known_aggregations) #side effect, lookup_dict is ready
+        self.convert_project_ids_to_wikicodes()
