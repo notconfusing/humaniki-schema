@@ -35,8 +35,13 @@ class MetricFacets(Enum):
 class PopulationDefinition(Enum):
     ALL_WIKIDATA = 1
     GTE_ONE_SITELINK = 2
-    SITELINK_MULTIPLICITY = 3
+    # SITELINK_MULTIPLICITY = 3
 
+def get_enum_from_str(enum_class, s):
+    try:
+        return getattr(enum_class, s.upper())
+    except AttributeError:
+        return None
 
 
 def read_config_file(config_file_name, caller__file__):

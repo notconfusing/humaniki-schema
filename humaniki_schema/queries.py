@@ -205,7 +205,9 @@ def get_aggregations_obj_normal(bias_value, dimension_values, session, as_subque
         return aggregations_id_q.subquery('aggs')
 
     # print(aggregations_id_q)
+    session.rollback()
     aggregations_id_objs = aggregations_id_q.all()
+    session.commit()
     if len(aggregations_id_objs) > 0:
         return aggregations_id_objs
     else:
@@ -302,7 +304,8 @@ class AggregationIdGetter():
     def __init__(self, bias, props, session=None, create_if_no_exist=True):
         self.bias = bias
         self.props = hs_utils.order_props(props)
-        self.all_props = [bias] + props
+        self.props = list(props) if isinstance(props, tuple) else props
+        self.all_props = [bias] + self.props
         self.props_values = [p.value for p in self.all_props]
         # not sure if this should be in the init fn
         self.session = session if session else session_factory()
