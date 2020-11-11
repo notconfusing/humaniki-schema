@@ -129,8 +129,8 @@ class label(Base):
     __tablename__ = 'label'
     id                 = Column(Integer, primary_key=True)
     fill_id            = Column(Integer, ForeignKey('fill.id'))
-    qid                = Column(Integer)
-    lang               = Column(VARCHAR(32))
+    qid                = Column(Integer, index=True)
+    lang               = Column(VARCHAR(32), index=True)
     label              = Column(VARCHAR(512)) # OR TINYTEXT
     property           = Column(Integer, index=True)
 
@@ -140,8 +140,8 @@ class label_misc(Base):
     """
     __tablename__ = 'label_misc'
     id                 = Column(Integer, primary_key=True)
-    src                = Column(VARCHAR(512))
-    lang               = Column(VARCHAR(32))
+    src                = Column(VARCHAR(512), index=True)
+    lang               = Column(VARCHAR(32), index=True)
     label              = Column(VARCHAR(512)) # OR TINYTEXT
     type               = Column(VARCHAR(32), index=True)
 

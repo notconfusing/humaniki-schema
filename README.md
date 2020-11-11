@@ -12,7 +12,7 @@
 - `docker exec -it some-mysql bash`
 - `mysql -uroot -h localhost -p` #from inside the docker container 
 - CREATE DATABASE `humaniki` DEFAULT CHARACTER SET 'utf8mb4';
-- CREATE USER 'humaniki'@'localhost' IDENTIFIED BY 'xxxxxxx'; #exclude identified by for brew no password
+- CREATE USER 'humaniki'@'localhost' IDENTIFIED BY 'xxxxxxx'; #exclude identified by for brew no password #use "IDENTIFIED WITH mysql_native_password BY" if using mysql8.0 new password method
 - CREATE USER 'humaniki'@'127.0.0.1' IDENTIFIED BY 'xxxxxxx'; #exclude identified by for brew no password
 - GRANT ALL ON `humaniki`.* TO 'humaniki'@'localhost';
 - GRANT ALL ON `humaniki`.* TO 'humaniki'@'127.0.0.1'; #double check for 172.0.xxx aka docker container IP address 
@@ -79,3 +79,15 @@ limit 2000
 -`pipenv shell` #loads our specific python with .env environment variables 
 -`python humaniki_backend/app.py` #runs the flask app entry point
 -or just run the configuration from PyCharm
+
+
+## double sudo method to be user 'humaniki' on wmflabs
+maximilianklein@humaniki:~$ sudo -- sudo -iu humaniki
+
+
+## running on wmflabs
+- craete a webproxy on horizon
+- run `gunicorn --bind unix:humaniki.sock -mXXX -t 60 wsgi:app` from humaniki-backend (running in a screen for now)
+- config `location / {
+            include proxy_params;
+            proxy_pass http://unix:/home/humaniki/humaniki-backend/humaniki.sock;}`
