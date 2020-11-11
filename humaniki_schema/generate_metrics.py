@@ -197,8 +197,9 @@ class MetricCreator():
 
     def execute(self):
         try:
+            self.db_session.rollback()
             self.metric_res = self.metric_q.all()
-        except sqlalchemy.exc.error:
+        except:
             raise
 
     def persist(self):
@@ -229,8 +230,20 @@ class MetricCreator():
         #     if insert_error.orig.args[1].startswith('Duplicate entry'):
         #         print('attempting to add a metric thats already been added')
         #         db_session.rollback()
-        self.db_session.add_all(self.insert_metrics)
-        self.db_session.commit()
+        try:
+            self.db_session.add_all(self.insert_metrics)
+            self.db_session.commit()
+        except sqlalchemy.exc.IntegrityError:
+            # try one by one
+            for insert_metric in self.insert_metrics:
+                try:
+                    self.db_session.add(insert_metric)
+                except sqlalchemy.exc.IntegrityError as ie:
+                    if ie.code == 1062: # duplicate
+                        print(f'duplicate error on {insert_metric}')
+                    else:
+                        raise
+                        self.db_session.rollback()
         return
 
     def run(self):
