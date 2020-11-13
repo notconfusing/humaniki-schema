@@ -24,9 +24,7 @@ class MetricFactory():
     def __init__(self, config, db_session=None):
         self.config = read_config_file(os.environ['HUMANIKI_YAML_CONFIG'], __file__)
         self.db_session = db_session if db_session else session_factory()
-        curr_fill, curr_fill_date = get_latest_fill_id(self.db_session)
-        self.curr_fill = curr_fill
-        self.curr_fill_date = curr_fill_date
+        self.curr_fill, self.curr_fill_date = get_latest_fill_id(self.db_session)
         self.metric_combinations = None
         self.metric_creators = []
 
@@ -69,7 +67,7 @@ class MetricFactory():
                                fill_id=self.curr_fill,
                                db_session=self.db_session)
             self.metric_creators.append(mc)
-            print(f"Instiated nubmer of metrics: {len(self.metric_creators)}")
+        print(f"Initialised number of metrics: {len(self.metric_creators)}")
 
     def _run_metric_creators(self):
         strategy_defined = 'execution_strategy' in self.config['generation']
@@ -215,8 +213,12 @@ class MetricCreator():
             # hope these align, this is why we need to do it by name
             dimension_values = {prop_id: prop_val for prop_id, prop_val in zip(self.dimension_properties_pids, prop_vals)}
             bias_value = {self.bias_property.value: gender}
-            agg_vals_id = self.aggregation_getter.lookup(bias_value=bias_value,
+            try:
+                agg_vals_id = self.aggregation_getter.lookup(bias_value=bias_value,
                                                          dimension_values=dimension_values)
+            except ValueError:
+                print(f'skipping something that dimension values {dimension_values}')
+                continue # if there's a new wiki, we won't count it
             a_metric = metric(fill_id=self.fill_id,
                               population_id=self.population_definition.value,
                               properties_id=self.metric_properties_id,

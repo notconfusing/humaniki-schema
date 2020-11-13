@@ -220,10 +220,14 @@ def get_aggregations_obj_normal(bias_value, dimension_values, session, as_subque
 def create_aggregations_obj(bias_value, dimension_aggregations, session):
     a_metric_aggregations_j = create_aggregations_obj_json(bias_value, dimension_aggregations, session)
 
-    metric_aggregations_n = create_aggregations_obj_normal(agg_id=a_metric_aggregations_j.id,
+    try:
+        metric_aggregations_n = create_aggregations_obj_normal(agg_id=a_metric_aggregations_j.id,
                                                            bias_value=bias_value,
                                                            dimension_aggregations=dimension_aggregations,
                                                            session=session)
+    except ValueError:
+        raise
+
     return a_metric_aggregations_j
 
 
@@ -251,7 +255,11 @@ def create_aggregations_obj_normal(agg_id, bias_value, dimension_aggregations, s
         value_code = value
         if prop_id == 0:
             # recall we fake sitelink as property id 0.
-            value_code = get_project_internal_id_from_wikiencoding(value, session)
+            try:
+                value_code = get_project_internal_id_from_wikiencoding(value, session)
+            except ValueError:
+                # if the wiki is new
+                raise
         a_metric_aggregations = metric_aggregations_n(id=agg_id,
                                                       property=prop_id,
                                                       value=value_code,
@@ -265,6 +273,9 @@ def create_aggregations_obj_normal(agg_id, bias_value, dimension_aggregations, s
 def get_project_internal_id_from_wikiencoding(wikiencoding, session):
     # TODO maybe I should just set up a massive enum for this.
     project_q = session.query(project.id).filter_by(code=wikiencoding)
+    internal_id = project_q.scalar()
+    if internal_id is None:
+        raise ValueError(f'Probably a new Wiki was added: {wikiencoding}')
     return project_q.scalar()
 
 
@@ -279,7 +290,7 @@ def get_project_wikiencoding_from_id(session, internal_project_id=None):
 
 def get_latest_fill_id(session):
     latest_q = session.query(func.max(fill.date)).subquery()
-    q = session.query(fill.id, fill.date).filter(fill.date == latest_q)
+    q = session.query(fill.id, fill.date).filter(fill.date == latest_q).filter(fill.detail['active']==True)
     latest_fill_id, latest_fill_date = q.one()
     return latest_fill_id, latest_fill_date
 
@@ -413,8 +424,12 @@ class AggregationIdGetter():
             return self._lookup_dict[lookup_path]
         except KeyError as ke:
             if self.create_if_no_exist:
-                newly_created_obj = create_aggregations_obj(bias_value=bias_value, dimension_aggregations=dimension_values, session=self.session)
-                return newly_created_obj.id
+                try:
+                    newly_created_obj = create_aggregations_obj(bias_value=bias_value, dimension_aggregations=dimension_values, session=self.session)
+                    return newly_created_obj.id
+                except ValueError:
+                    # sometimes happens is a wikidoesn't exist
+                    raise
             else:
                 raise KeyError(ke)
 

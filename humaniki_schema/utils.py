@@ -7,6 +7,7 @@ import yaml
 
 WMF_TIMESTAMP_FMT = '%a %b %d %H:%M:%S %z %Y'
 HUMANIKI_SNAPSHOT_DATE_FMT = '%Y-%m-%d'
+HUMANIKI_SNAPSHOT_DATETIME_FMT = '%Y-%m-%d %H:%M:%S'
 
 def make_fill_dt(snapshot_str):
     return datetime.strptime(snapshot_str, HUMANIKI_SNAPSHOT_DATE_FMT)
