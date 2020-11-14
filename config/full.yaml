@@ -1,8 +1,0 @@
-generation:
-  example:
-    datadir: ~/workspace/humaniki-schema/humaniki_schema/example_data
-    len: 500
-    fills: 2
-test:
-  test_datadir: ~/workspace/humaniki-backend/tests/test_data
-  skip_gen: true
