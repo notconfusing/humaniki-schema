@@ -4,8 +4,9 @@ from itertools import combinations, product
 import sqlalchemy
 
 from sqlalchemy import func, and_
+from sqlalchemy.sql.operators import isnot
 
-from humaniki_schema.queries import get_latest_fill_id, AggregationIdGetter, get_properties_obj
+from humaniki_schema.queries import get_latest_fill_id, AggregationIdGetter, get_properties_obj, NoSuchWikiError
 from humaniki_schema.db import session_factory
 from humaniki_schema.schema import human, human_sitelink, human_country, human_occupation, metric
 from humaniki_schema.utils import Properties, PopulationDefinition, get_enum_from_str, read_config_file
@@ -188,6 +189,9 @@ class MetricCreator():
         if population_filter is not None:
             metric_q = metric_q.filter(population_filter)
 
+        # add gender is not null
+        metric_q = metric_q.filter(isnot(human.gender, None))
+
         # current fill filter
         metric_q = metric_q.filter(human.fill_id == self.fill_id)
         metric_q = metric_q.group_by(*group_bys)
@@ -204,7 +208,7 @@ class MetricCreator():
         self.aggregation_getter.get_all_known_aggregations_of_props()
         # these remain static
         for row_i, row in enumerate(self.metric_res):
-            if row_i % 100 == 0:
+            if row_i % 1000 == 0:
                 print(row_i)
             # TODO do this by name lookup not positions
             gender = row[0]
@@ -216,7 +220,7 @@ class MetricCreator():
             try:
                 agg_vals_id = self.aggregation_getter.lookup(bias_value=bias_value,
                                                          dimension_values=dimension_values)
-            except ValueError:
+            except NoSuchWikiError:
                 print(f'skipping something that dimension values {dimension_values}')
                 continue # if there's a new wiki, we won't count it
             a_metric = metric(fill_id=self.fill_id,

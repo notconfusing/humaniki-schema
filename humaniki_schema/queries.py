@@ -225,7 +225,7 @@ def create_aggregations_obj(bias_value, dimension_aggregations, session):
                                                            bias_value=bias_value,
                                                            dimension_aggregations=dimension_aggregations,
                                                            session=session)
-    except ValueError:
+    except NoSuchWikiError:
         raise
 
     return a_metric_aggregations_j
@@ -257,7 +257,7 @@ def create_aggregations_obj_normal(agg_id, bias_value, dimension_aggregations, s
             # recall we fake sitelink as property id 0.
             try:
                 value_code = get_project_internal_id_from_wikiencoding(value, session)
-            except ValueError:
+            except NoSuchWikiError:
                 # if the wiki is new
                 raise
         a_metric_aggregations = metric_aggregations_n(id=agg_id,
@@ -275,7 +275,7 @@ def get_project_internal_id_from_wikiencoding(wikiencoding, session):
     project_q = session.query(project.id).filter_by(code=wikiencoding)
     internal_id = project_q.scalar()
     if internal_id is None:
-        raise ValueError(f'Probably a new Wiki was added: {wikiencoding}')
+        raise NoSuchWikiError(f'Probably a new Wiki was added: {wikiencoding}')
     return project_q.scalar()
 
 
@@ -427,7 +427,7 @@ class AggregationIdGetter():
                 try:
                     newly_created_obj = create_aggregations_obj(bias_value=bias_value, dimension_aggregations=dimension_values, session=self.session)
                     return newly_created_obj.id
-                except ValueError:
+                except NoSuchWikiError:
                     # sometimes happens is a wikidoesn't exist
                     raise
             else:
@@ -437,3 +437,10 @@ class AggregationIdGetter():
         known_aggregations = self.build_and_execute_all_aggregations_query()
         self.build_all_aggregations_map(known_aggregations) #side effect, lookup_dict is ready
         self.convert_project_ids_to_wikicodes()
+
+
+class NoSuchWikiError(Exception):
+    pass
+
+class NoGenderError(Exception):
+    pass
