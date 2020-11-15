@@ -1,0 +1,14 @@
+generation:
+  example:
+    datadir: ~/workspace/humaniki-schema/humaniki_schema/example_data
+    len: 500
+    fills: 2
+
+insertion:
+  wdtk_processing_output: /data/project/denelezh/wdtk_processing_output
+  use_dump: 20
+  overwrite: true
+
+test:
+  test_datadir: ~/workspace/humaniki-backend/tests/test_data
+  skip_gen: true
