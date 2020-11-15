@@ -25,6 +25,7 @@ class humanikiDataInserter():
         self.config = hs_utils.read_config_file(config, __file__)
         self.config_insertion = self.config['insertion']
         self.overwrite = self.config_insertion['overwrite'] if 'overwrite' in self.config_insertion else False
+        self.only_files = self.config_insertion['only_files'] if 'only_files' in self.config_insertion else None
         self.dump_date = dump_date
         self.dump_date_str = None
         self.fill_id = None
@@ -52,16 +53,16 @@ class humanikiDataInserter():
     def validate_extant_csvs(self):
         csv_dir = os.path.join(self.config_insertion['wdtk_processing_output'], self.dump_date.strftime('%Y%m%d'))
         all_files = os.listdir(csv_dir)
-        expected_csvs = ["occupation_parent.csv", "label.csv", "human_country.csv", "human_occupation.csv", "human.csv",
+        allowable_csvs = ["occupation_parent.csv", "label.csv", "human_country.csv", "human_occupation.csv", "human.csv",
                          "human_sitelink.csv", ]
         extant_csvs = [f for f in all_files if f.endswith('.csv')]
         self.csvs = []
         for csv in extant_csvs:
-            if csv not in expected_csvs:
-                print(f'Not going to process: {csv}')
+            if csv not in allowable_csvs:
+                print(f'Not an allowable CSV: {csv}')
             else:
                 self.csvs.append(csv)
-        assert len(self.csvs) == len(expected_csvs)
+        assert len(self.csvs) == len(allowable_csvs)
 
     def create_fill_item(self):
         prev_latest_fill_id, prev_latest_fill_dt = get_latest_fill_id(self.db_session)
@@ -137,12 +138,21 @@ class humanikiDataInserter():
             'label': ['qid', 'label'],
             'occupation_parent': ['occupation', 'parent'],
         }
+        table_const_map = {
+            'label': {'lang':'en'},
+        }
         for csv in self.csvs:
             csv_f = os.path.join(self.config_insertion['wdtk_processing_output'], self.dump_date_str, csv)
             csv_table_name = csv.split('.csv')[0]
             schema_table = getattr(humaniki_schema.schema, csv_table_name)
+            extra_const_cols = table_const_map[csv_table_name] if csv_table_name in table_const_map.keys() else None
+
+            # skip this file by filename
+            if self.only_files is not None and csv_table_name not in self.only_files:
+                print(f'Only_files acvtive, so skipping {csv_table_name}')
+                continue
             self._insert_csv(table_f=csv_f,
-                             extra_const_cols=None,
+                             extra_const_cols=extra_const_cols,
                              schema_table=schema_table,
                              columns=table_column_map[csv_table_name])
 

@@ -12,13 +12,19 @@
 - `docker exec -it some-mysql bash`
 - `mysql -uroot -h localhost -p` #from inside the docker container 
 - CREATE DATABASE `humaniki` DEFAULT CHARACTER SET 'utf8mb4';
-- CREATE USER 'humaniki'@'localhost' IDENTIFIED BY 'xxxxxxx'; #exclude identified by for brew no password #use "IDENTIFIED WITH mysql_native_password BY" if using mysql8.0 new password method
-- CREATE USER 'humaniki'@'127.0.0.1' IDENTIFIED BY 'xxxxxxx'; #exclude identified by for brew no password
+- CREATE USER 'humaniki'@'localhost' IDENTIFIED BY 'xxxxxxx'; #exclude identified by for brew no password #use "IDENTIFIED WITH  ; #exclude identified by for brew no password
 - GRANT ALL ON `humaniki`.* TO 'humaniki'@'localhost';
 - GRANT ALL ON `humaniki`.* TO 'humaniki'@'127.0.0.1'; #double check for 172.0.xxx aka docker container IP address 
 - GRANT FILE on *.* to 'humaniki'@'localhost';
 
 -docker start some-mysql 
+
+
+### piepenv installing schema and backend
+- pre req `sudo apt-get install libmysqlclient-dev`
+
+- `git clone humaniki-schema<as git link>`
+- `pipenv install`
 
 ### alembic
 - alembic init alembic
