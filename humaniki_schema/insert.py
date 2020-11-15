@@ -1,6 +1,7 @@
 import datetime
 import json
 import os
+import sys
 import time
 from os import listdir
 
@@ -22,12 +23,13 @@ from humaniki_schema.db import session_factory
 
 
 class humanikiDataInserter():
-    def __init__(self, config, dump_date=None):
+    def __init__(self, config, dump_date=None, dump_subset=None):
         self.config = hs_utils.read_config_file(config, __file__)
         self.config_insertion = self.config['insertion']
         self.overwrite = self.config_insertion['overwrite'] if 'overwrite' in self.config_insertion else False
         self.only_files = self.config_insertion['only_files'] if 'only_files' in self.config_insertion else None
-        self.dump_date = dump_date
+        self.dump_date = self._make_dump_date(dump_date) if dump_date else None
+        self.dump_subset = dump_subset
         self.dump_date_str = None
         self.fill_id = None
         self.detection_type = None
@@ -53,9 +55,11 @@ class humanikiDataInserter():
 
     def validate_extant_csvs(self):
         csv_dir = os.path.join(self.config_insertion['wdtk_processing_output'], self.dump_date.strftime('%Y%m%d'))
+        csv_dir = os.path.join(csv_dir, self.dump_subset) if self.dump_subset else csv_dir
         all_files = os.listdir(csv_dir)
-        allowable_csvs = ["occupation_parent.csv", "label.csv", "human_country.csv", "human_occupation.csv", "human.csv",
-                         "human_sitelink.csv", ]
+        allowable_csvs = ["occupation_parent.csv", "label.csv", "human_country.csv", "human_occupation.csv",
+                          "human.csv",
+                          "human_sitelink.csv", ]
         extant_csvs = [f for f in all_files if f.endswith('.csv')]
         self.csvs = []
         for csv in extant_csvs:
@@ -140,7 +144,7 @@ class humanikiDataInserter():
             'occupation_parent': ['occupation', 'parent'],
         }
         table_const_map = {
-            'label': {'lang':'en'},
+            'label': {'lang': 'en'},
         }
         for csv in self.csvs:
             csv_f = os.path.join(self.config_insertion['wdtk_processing_output'], self.dump_date_str, csv)
@@ -154,14 +158,16 @@ class humanikiDataInserter():
                 continue
             insert_create_row_objs_start = time.time()
             insert_rows = self._insert_csv(table_f=csv_f,
-                             extra_const_cols=extra_const_cols,
-                             schema_table=schema_table,
-                             columns=table_column_map[csv_table_name])
+                                           extra_const_cols=extra_const_cols,
+                                           schema_table=schema_table,
+                                           columns=table_column_map[csv_table_name])
             insert_persist_row_objs_start = time.time()
             self._persist_rows(insert_rows)
             insert_persist_row_objs_end = time.time()
-            print(f'INSERT, creating row objects took: {insert_persist_row_objs_start-insert_create_row_objs_start} seconds')
-            print(f'INSERT, persisting row objects took: {insert_persist_row_objs_end-insert_persist_row_objs_start} seconds')
+            print(
+                f'INSERT, creating row objects took: {insert_persist_row_objs_start-insert_create_row_objs_start} seconds')
+            print(
+                f'INSERT, persisting row objects took: {insert_persist_row_objs_end-insert_persist_row_objs_start} seconds')
 
     def validate(self):
         pass
@@ -175,5 +181,9 @@ class humanikiDataInserter():
 
 
 if __name__ == '__main__':
-    hdi = humanikiDataInserter(os.environ['HUMANIKI_YAML_CONFIG'])
+    dump_date = sys.argv[1] if len(sys.argv) >= 2 else None
+    dump_subset = sys.argv[2] if len(sys.argv) >= 3 else None
+    hdi = humanikiDataInserter(config=os.environ['HUMANIKI_YAML_CONFIG'],
+                               dump_date=dump_date,
+                               dump_subset=dump_subset)
     hdi.run()
