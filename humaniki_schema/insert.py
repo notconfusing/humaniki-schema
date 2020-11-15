@@ -1,6 +1,7 @@
 import datetime
 import json
 import os
+import time
 from os import listdir
 
 from sqlalchemy.orm.attributes import flag_modified
@@ -127,7 +128,7 @@ class humanikiDataInserter():
             a_row = schema_table(**row_params)
             insert_rows.append(a_row)
         print(f'there are {len(insert_rows)} rows to insert for {schema_table}')
-        self._persist_rows(insert_rows)
+        return insert_rows
 
     def insert_csvs(self):
         table_column_map = {
@@ -151,10 +152,16 @@ class humanikiDataInserter():
             if self.only_files is not None and csv_table_name not in self.only_files:
                 print(f'Only_files acvtive, so skipping {csv_table_name}')
                 continue
-            self._insert_csv(table_f=csv_f,
+            insert_create_row_objs_start = time.time()
+            insert_rows = self._insert_csv(table_f=csv_f,
                              extra_const_cols=extra_const_cols,
                              schema_table=schema_table,
                              columns=table_column_map[csv_table_name])
+            insert_persist_row_objs_start = time.time()
+            self._persist_rows(insert_rows)
+            insert_persist_row_objs_end = time.time()
+            print(f'INSERT, creating row objects took: {insert_persist_row_objs_start-insert_create_row_objs_start} seconds')
+            print(f'INSERT, persisting row objects took: {insert_persist_row_objs_end-insert_persist_row_objs_start} seconds')
 
     def validate(self):
         pass
