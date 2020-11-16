@@ -54,9 +54,10 @@ class humanikiDataInserter():
         self.dump_date_str = self.dump_date.strftime('%Y%m%d')
 
     def validate_extant_csvs(self):
-        csv_dir = os.path.join(self.config_insertion['wdtk_processing_output'], self.dump_date.strftime('%Y%m%d'))
-        csv_dir = os.path.join(csv_dir, self.dump_subset) if self.dump_subset else csv_dir
-        all_files = os.listdir(csv_dir)
+        self.csv_dir = os.path.join(self.config_insertion['wdtk_processing_output'], self.dump_date.strftime('%Y%m%d'))
+        self.csv_dir = os.path.join(self.csv_dir, self.dump_subset) if self.dump_subset else self.csv_dir
+
+        all_files = os.listdir(self.csv_dir)
         allowable_csvs = ["occupation_parent.csv", "label.csv", "human_country.csv", "human_occupation.csv",
                           "human.csv",
                           "human_sitelink.csv", ]
@@ -147,7 +148,7 @@ class humanikiDataInserter():
             'label': {'lang': 'en'},
         }
         for csv in self.csvs:
-            csv_f = os.path.join(self.config_insertion['wdtk_processing_output'], self.dump_date_str, csv)
+            csv_f = os.path.join(self.csv_dir, csv)
             csv_table_name = csv.split('.csv')[0]
             schema_table = getattr(humaniki_schema.schema, csv_table_name)
             extra_const_cols = table_const_map[csv_table_name] if csv_table_name in table_const_map.keys() else None
