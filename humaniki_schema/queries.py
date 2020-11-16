@@ -4,7 +4,8 @@ from sqlalchemy import func, and_
 from sqlalchemy.orm import aliased
 
 from humaniki_schema import utils as hs_utils
-from humaniki_schema.schema import fill, metric_properties_j, metric_properties_n, metric_aggregations_j, metric_aggregations_n, \
+from humaniki_schema.schema import fill, metric_properties_j, metric_properties_n, metric_aggregations_j, \
+    metric_aggregations_n, \
     project
 import humaniki_schema.utils as hs_utils
 
@@ -222,9 +223,9 @@ def create_aggregations_obj(bias_value, dimension_aggregations, session):
 
     try:
         metric_aggregations_n = create_aggregations_obj_normal(agg_id=a_metric_aggregations_j.id,
-                                                           bias_value=bias_value,
-                                                           dimension_aggregations=dimension_aggregations,
-                                                           session=session)
+                                                               bias_value=bias_value,
+                                                               dimension_aggregations=dimension_aggregations,
+                                                               session=session)
     except NoSuchWikiError:
         raise
 
@@ -282,21 +283,21 @@ def get_project_internal_id_from_wikiencoding(wikiencoding, session):
 def get_project_wikiencoding_from_id(session, internal_project_id=None):
     project_q = session.query(project.id, project.code)
     if internal_project_id:
-        project_q = project_q.filter(project.id==internal_project_id)
+        project_q = project_q.filter(project.id == internal_project_id)
         return project_q.scalar()
-    else: #getting all of these
+    else:  # getting all of these
         return project_q.all()
 
 
 def get_latest_fill_id(session):
     latest_q = session.query(func.max(fill.date)).subquery()
-    q = session.query(fill.id, fill.date).filter(fill.date == latest_q).filter(fill.detail['active']==True)
+    q = session.query(fill.id, fill.date).filter(fill.date == latest_q).filter(fill.detail['active'] == True)
     latest_fill_id, latest_fill_date = q.one()
     return latest_fill_id, latest_fill_date
 
 
 def get_exact_fill_id(session, exact_fill_dt):
-    q = session.query(fill.id, fill.date).filter(fill.date == exact_fill_dt)
+    q = session.query(fill.id, fill.date).filter(fill.date == exact_fill_dt).filter(fill.detail['active'] == True)
     fill_id, fill_date = q.one()
     return fill_id, fill_date
 
@@ -379,7 +380,7 @@ class AggregationIdGetter():
         :param wide_row:
         :return: nested dict {'val1':{'val2':{'valn':metric_aggregation_id}}}
         """
-        assert wide_row[-1] is None # artifact of SQL unique query
+        assert wide_row[-1] is None  # artifact of SQL unique query
         wide_row = wide_row[:-1]
         vals = tuple([man_obj.value for man_obj in wide_row])
         metric_aggregations_id = wide_row[0].id
@@ -407,14 +408,15 @@ class AggregationIdGetter():
         if hs_utils.Properties.PROJECT in self.props:
             self.build_project_wikiencoding()
             proj_position = self.all_props.index(hs_utils.Properties.PROJECT)
-            coded_tuples_to_add = {} #since can't add to dict as iterating over it
+            coded_tuples_to_add = {}  # since can't add to dict as iterating over it
             for agg_tuple, agg_id in self._lookup_dict.items():
-                coded_agg_tuple = tuple([e if i!= proj_position else self.intenralcode_projcode[e] for i, e in enumerate(agg_tuple)])
+                coded_agg_tuple = tuple(
+                    [e if i != proj_position else self.intenralcode_projcode[e] for i, e in enumerate(agg_tuple)])
                 coded_tuples_to_add[coded_agg_tuple] = agg_id
             # now add them back in
             for coded_agg_tuple, agg_id in coded_tuples_to_add.items():
                 self._lookup_dict[coded_agg_tuple] = agg_id
-        else:# Nothing to do.
+        else:  # Nothing to do.
             pass
 
     def lookup(self, bias_value, dimension_values):
@@ -425,7 +427,9 @@ class AggregationIdGetter():
         except KeyError as ke:
             if self.create_if_no_exist:
                 try:
-                    newly_created_obj = create_aggregations_obj(bias_value=bias_value, dimension_aggregations=dimension_values, session=self.session)
+                    newly_created_obj = create_aggregations_obj(bias_value=bias_value,
+                                                                dimension_aggregations=dimension_values,
+                                                                session=self.session)
                     return newly_created_obj.id
                 except NoSuchWikiError:
                     # sometimes happens is a wikidoesn't exist
@@ -435,12 +439,13 @@ class AggregationIdGetter():
 
     def get_all_known_aggregations_of_props(self):
         known_aggregations = self.build_and_execute_all_aggregations_query()
-        self.build_all_aggregations_map(known_aggregations) #side effect, lookup_dict is ready
+        self.build_all_aggregations_map(known_aggregations)  # side effect, lookup_dict is ready
         self.convert_project_ids_to_wikicodes()
 
 
 class NoSuchWikiError(Exception):
     pass
+
 
 class NoGenderError(Exception):
     pass

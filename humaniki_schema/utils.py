@@ -62,3 +62,6 @@ def read_config_file(config_file_name, caller__file__):
                 pass
     # we got to the end without finding a config
     raise FileNotFoundError(config_file_name)
+
+def make_dump_date_from_str(datestr):
+    return datetime.strptime(datestr, '%Y%m%d').date()

@@ -1,4 +1,5 @@
 import os
+import sys
 from itertools import combinations, product
 
 import sqlalchemy
@@ -6,10 +7,11 @@ import sqlalchemy
 from sqlalchemy import func, and_
 from sqlalchemy.sql.operators import isnot
 
-from humaniki_schema.queries import get_latest_fill_id, AggregationIdGetter, get_properties_obj, NoSuchWikiError
+from humaniki_schema.queries import get_latest_fill_id, AggregationIdGetter, get_properties_obj, NoSuchWikiError, \
+    get_exact_fill_id
 from humaniki_schema.db import session_factory
 from humaniki_schema.schema import human, human_sitelink, human_country, human_occupation, metric
-from humaniki_schema.utils import Properties, PopulationDefinition, get_enum_from_str, read_config_file
+from humaniki_schema.utils import Properties, PopulationDefinition, get_enum_from_str, read_config_file, make_dump_date_from_str
 
 import logging
 
@@ -22,10 +24,14 @@ class MetricFactory():
       - executing them
     - creating the aggregation_id and property_id tables first if necessary, or cacheing them in memory for fast access
     """
-    def __init__(self, config, db_session=None):
-        self.config = read_config_file(os.environ['HUMANIKI_YAML_CONFIG'], __file__)
+    def __init__(self, config, db_session=None, fill_dt_str=None):
+        self.config = read_config_file(config, __file__)
         self.db_session = db_session if db_session else session_factory()
-        self.curr_fill, self.curr_fill_date = get_latest_fill_id(self.db_session)
+        if fill_dt_str is None:
+            self.curr_fill, self.curr_fill_date = get_latest_fill_id(self.db_session)
+        else:
+            fill_dt = make_dump_date_from_str(fill_dt_str)
+            self.curr_fill, self.curr_fill_date = get_exact_fill_id(self.db_session, fill_dt)
         self.metric_combinations = None
         self.metric_creators = []
 
@@ -260,7 +266,10 @@ class MetricCreator():
 
 
 if __name__ == '__main__':
-    mf = MetricFactory(config=os.environ['HUMANIKI_YAML_CONFIG'])
+    dump_date = sys.argv[1] if len(sys.argv) >= 2 else None
+    print(f'Specified dump date: {dump_date}')
+    mf = MetricFactory(config=os.environ['HUMANIKI_YAML_CONFIG'],
+                       fill_dt_str=dump_date)
     mf.run()
     # in the future metricfactor should fan this out to metriccreator via the config
     # mc = MetricCreator(population_definition=PopulationDefinition.GTE_ONE_SITELINK,
