@@ -1,7 +1,7 @@
 """create metrics, humans, from scratch, labels with property
 
 Revision ID: c57dc35547ba
-Revises: 
+Revises:
 Create Date: 2020-10-09 13:49:44.752317
 
 """
@@ -110,14 +110,13 @@ def upgrade():
     sa.PrimaryKeyConstraint('fill_id', 'human_id', 'sitelink')
     )
     op.create_table('label',
-    sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('fill_id', sa.Integer(), nullable=True),
     sa.Column('qid', sa.Integer(), nullable=True),
     sa.Column('lang', mysql.VARCHAR(length=32), nullable=True),
     sa.Column('label', mysql.VARCHAR(length=512), nullable=True),
     sa.Column('property', sa.Integer(), nullable=True),
     sa.ForeignKeyConstraint(['fill_id'], ['fill.id'], ),
-    sa.PrimaryKeyConstraint('id')
+    sa.PrimaryKeyConstraint('qid', 'lang')
     )
     op.create_index(op.f('ix_label_property'), 'label', ['property'], unique=False)
     op.create_table('metric_coverage',

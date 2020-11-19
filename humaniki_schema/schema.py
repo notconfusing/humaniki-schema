@@ -129,8 +129,8 @@ class label(Base):
     __tablename__ = 'label'
     id                 = Column(Integer, primary_key=True)
     fill_id            = Column(Integer, ForeignKey('fill.id'))
-    qid                = Column(Integer, index=True)
-    lang               = Column(VARCHAR(32), index=True)
+    qid                = Column(Integer, primary_key=True, index=True)
+    lang               = Column(VARCHAR(32), primary_key=True, index=True)
     label              = Column(VARCHAR(512)) # OR TINYTEXT
     property           = Column(Integer, index=True)
 

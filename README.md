@@ -8,8 +8,8 @@
 
 ### mysql8.0
 - Following instructions from 
-- `docker run -p 3306:3306 --name some-mysql -e MYSQL_ROOT_PASSWORD=my-secret-pw -d mysql:latest`
-- `docker exec -it some-mysql bash`
+- `docker run --name humaniki-mysql -e MYSQL_ROOT_PASSWORD=my-secret-pw -p 3306:3306 -v /data/project/denelezh:/data/project/denelezh -d mysql:latest`
+- `docker exec -it humaniki-mysql bash`
 - `mysql -uroot -h localhost -p` #from inside the docker container 
 - CREATE DATABASE `humaniki` DEFAULT CHARACTER SET 'utf8mb4';
 - CREATE USER 'humaniki'@'localhost' IDENTIFIED BY 'xxxxxxx'; #exclude identified by for brew no password #use "IDENTIFIED WITH  ; #exclude identified by for brew no password
@@ -35,7 +35,7 @@ docker start some-mysql
 
 ### sql config
 in my.cnf
-secure-file-priv= ""
+`secure-file-priv= /data/project/denelezh`
 
 
 
@@ -74,7 +74,7 @@ limit 2000
 - If you can't connect to database check if docker container is running 
 - `docker ps`
 -If the container isn't running you need to run the following: 
--`docker start some-mysql`
+-`docker start humaniki-mysql`
 - You should see an entry to some-mysql
 
 -Then try to connect to my-sql using the command line client with the humaniki user
