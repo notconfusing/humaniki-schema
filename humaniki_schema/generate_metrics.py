@@ -1,3 +1,4 @@
+import gc
 import os
 import sys
 from itertools import combinations, product
@@ -84,6 +85,7 @@ class MetricFactory():
             for mc in self.metric_creators:
                 print(f"Running: {mc}")
                 mc.run()
+                gc.collect()
         else:
             raise NotImplementedError
 

@@ -86,9 +86,7 @@ class humanikiDataInserter():
         self.csv_dir = os.path.join(self.csv_dir, self.dump_subset) if self.dump_subset else self.csv_dir
 
         all_files = os.listdir(self.csv_dir)
-        allowable_csvs = ["occupation_parent.csv", "label.csv", "human_country.csv", "human_occupation.csv",
-                          "human.csv",
-                          "human_sitelink.csv", ]
+        allowable_csvs = [f"{table_name}.csv" for table_name in self.table_column_map.keys()]
         extant_csvs = [f for f in all_files if f.endswith('.csv')]
         self.csvs = []
         for csv in extant_csvs:
