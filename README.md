@@ -18,6 +18,9 @@
 - GRANT FILE on *.* to 'humaniki'@'localhost';
 
 -docker start some-mysql 
+### sql config
+in /etc/mysql/my.cnf
+`secure-file-priv= /data/project/denelezh`
 
 
 ### piepenv installing schema and backend
@@ -33,9 +36,6 @@
 ### starting mysql server
 docker start some-mysql
 
-### sql config
-in my.cnf
-`secure-file-priv= /data/project/denelezh`
 
 
 

@@ -195,12 +195,12 @@ class humanikiDataInserter():
     def execute_single_infile(self, csv_f, csv_table_name, column_insertion_order, extra_const_cols, escaping_options):
         column_list_str = ','.join(column_insertion_order)
         # TODO supports just one extra const col for now
-        extra_const_str = (',' + [f'{k}={v}' for k, v in extra_const_cols.items()][0]) if extra_const_cols else ''
+        extra_const_str = (',' + [f"{k}='{v}'" for k, v in extra_const_cols.items()][0]) if extra_const_cols else ''
         infile_sql = f"""
         LOAD DATA INFILE '{csv_f}' IGNORE
             INTO TABLE `{csv_table_name}` FIELDS TERMINATED BY ',' {escaping_options}
                 ({column_list_str})
-                set fill_id={self.fill_id};
+                set fill_id={self.fill_id} {extra_const_str};
         """
         print(infile_sql)
         self.db_session.get_bind().execute(infile_sql)

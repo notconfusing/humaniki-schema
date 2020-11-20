@@ -33,6 +33,11 @@ def clear_tables(tables):
         db_session.query(table).delete()
         db_session.commit()
 
+def clear_misc_tables():
+    for table in [project, label_misc]:
+        db_session.query(table).delete()
+        db_session.commit()
+
 
 def make_fills(n=2):
     fills = []
@@ -104,6 +109,26 @@ def make_projects(data_dir):
                                             data_dir=data_dir,
                                             fills=None)
     return projects
+
+def make_label_misc(data_dir):
+    """seperate because project data needs to be migrated first-setup scenarios"""
+    labels_misc = make_table_exactly_from_file(fname=f'denelezh_project.tsv',
+                                       schema_table=label_misc,
+                                       table_tsv_map={'src': 'code', 'label': 'label', 'lang':'lang', 'type':'type'},
+                                       data_dir=data_dir,
+                                       fills=None,
+                                       extra_const_cols={'lang':'en', 'type':'project'})
+    return labels_misc
+
+def make_country_misc_iso(data_dir):
+    country_misc_iso = make_table_exactly_from_file(fname='wdqs_country_labels_iso.tsv',
+                                 schema_table=label_misc,
+                                 table_tsv_map={'src': 'id', 'label': 'label',
+                                                'lang': 'lang', 'type': 'type'},
+                                 data_dir=data_dir,
+                                 fills=None,
+                                 extra_const_cols={'type': 'iso_3166'})
+    return country_misc_iso
 
 def make_table_exactly_from_file(fname, schema_table, table_tsv_map, data_dir, fills, extra_const_cols=None):
     table_f = os.path.join(data_dir, fname)
@@ -180,17 +205,6 @@ def insert_data(data_dir='example_data', example_len=10, num_fills=2):
                                        fills=None,
                                        extra_const_cols={'lang':'fr', 'type':'project'})
     print(f'inserted: {len(labels_misc_fr)} labels_misc fake french')
-    country_misc_iso = make_table_exactly_from_file(fname='wdqs_country_labels_iso.tsv',
-                                            schema_table=label_misc,
-                                            table_tsv_map={'src': 'id', 'label': 'label',
-                                                           'lang': 'lang', 'type':'type'},
-                                            data_dir=data_dir,
-                                            fills=None,
-                                                    extra_const_cols={'type':'iso_3166'})
-    print(f'inserted: {len(country_misc_iso)} country_misc_iso')
-    projects = make_projects(data_dir=data_dir)
-
-    print(f'inserted: {len(projects)} projects')
     country_fr = make_table_exactly_from_file(fname='wdqs_country_labels_fr.tsv',
                                             schema_table=label,
                                             table_tsv_map={'qid': 'id', 'label': 'label',
@@ -212,9 +226,27 @@ def insert_data(data_dir='example_data', example_len=10, num_fills=2):
                                             data_dir=data_dir,
                                             fills=None)
     print(f'inserted: {len(country_iso)} country_iso')
+
+    #### Static ones that are needed
+    country_misc_iso = make_country_misc_iso(data_dir=data_dir)
+    print(f'inserted: {len(country_misc_iso)} country_misc_iso')
+
+    projects = make_projects(data_dir=data_dir)
+    print(f'inserted: {len(projects)} projects')
+
+    label_misc = make_label_misc(data_dir=data_dir)
+    print(f'inserted: {len(label_misc)} label misc')
+
+
+
+
+
     return curr_fill
 
 
 
 if __name__ == "__main__":
+    clear_misc_tables()
     make_projects(data_dir='example_data')
+    make_country_misc_iso(data_dir='example_data')
+    make_label_misc(data_dir='example_data')

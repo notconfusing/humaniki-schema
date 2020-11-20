@@ -127,7 +127,6 @@ class label(Base):
     these are for QIDs
     """
     __tablename__ = 'label'
-    id                 = Column(Integer, primary_key=True)
     fill_id            = Column(Integer, ForeignKey('fill.id'))
     qid                = Column(Integer, primary_key=True, index=True)
     lang               = Column(VARCHAR(32), primary_key=True, index=True)
