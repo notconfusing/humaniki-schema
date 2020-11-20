@@ -95,6 +95,16 @@ def make_table_from_file(fname, schema_table, table_tsv_map, data_dir, fills, ex
     return insert_rows
 
 
+def make_projects(data_dir):
+    """seperate because project data needs to be migrated first-setup scenarios"""
+    projects = make_table_exactly_from_file(fname='denelezh_project.tsv',
+                                            schema_table=project,
+                                            table_tsv_map={'type': 'type', 'code': 'code', 'label': 'label',
+                                                           'url': 'url'},
+                                            data_dir=data_dir,
+                                            fills=None)
+    return projects
+
 def make_table_exactly_from_file(fname, schema_table, table_tsv_map, data_dir, fills, extra_const_cols=None):
     table_f = os.path.join(data_dir, fname)
     table_df = pd.read_csv(table_f, sep='\t').replace(dict(type={np.nan: None}))
@@ -178,12 +188,8 @@ def insert_data(data_dir='example_data', example_len=10, num_fills=2):
                                             fills=None,
                                                     extra_const_cols={'type':'iso_3166'})
     print(f'inserted: {len(country_misc_iso)} country_misc_iso')
-    projects = make_table_exactly_from_file(fname='denelezh_project.tsv',
-                                            schema_table=project,
-                                            table_tsv_map={'type': 'type', 'code': 'code', 'label': 'label',
-                                                           'url': 'url'},
-                                            data_dir=data_dir,
-                                            fills=None)
+    projects = make_projects(data_dir=data_dir)
+
     print(f'inserted: {len(projects)} projects')
     country_fr = make_table_exactly_from_file(fname='wdqs_country_labels_fr.tsv',
                                             schema_table=label,
@@ -207,3 +213,8 @@ def insert_data(data_dir='example_data', example_len=10, num_fills=2):
                                             fills=None)
     print(f'inserted: {len(country_iso)} country_iso')
     return curr_fill
+
+
+
+if __name__ == "__main__":
+    make_projects(data_dir='example_data')

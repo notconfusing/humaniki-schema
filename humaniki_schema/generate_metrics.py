@@ -1,6 +1,7 @@
 import gc
 import os
 import sys
+import time
 from itertools import combinations, product
 
 import sqlalchemy
@@ -90,10 +91,12 @@ class MetricFactory():
             raise NotImplementedError
 
     def run(self):
+        metric_run_start = time.time()
         self._generate_metric_combinations()
         self._create_metric_creators()
         self._run_metric_creators()
-
+        metric_run_end = time.time()
+        print(f'Metric Factory took {metric_run_end-metric_run_start} seconds')
 
 class MetricCreator():
     """
