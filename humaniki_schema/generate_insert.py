@@ -1,6 +1,7 @@
 import datetime
-import json
 import os
+import sys
+
 from humaniki_schema.schema import fill, human, human_country, human_occupation, human_property, human_sitelink, label, \
     metric, metric_properties_j, metric_properties_n, metric_aggregations_j, metric_aggregations_n, metric_coverage, \
     project, label_misc
@@ -110,7 +111,7 @@ def make_projects(data_dir):
                                             fills=None)
     return projects
 
-def make_label_misc(data_dir):
+def make_label_misc_project(data_dir):
     """seperate because project data needs to be migrated first-setup scenarios"""
     labels_misc = make_table_exactly_from_file(fname=f'denelezh_project.tsv',
                                        schema_table=label_misc,
@@ -119,6 +120,15 @@ def make_label_misc(data_dir):
                                        fills=None,
                                        extra_const_cols={'lang':'en', 'type':'project'})
     return labels_misc
+
+def make_label_misc_gender_labels(data_dir):
+    bias_labels = make_table_exactly_from_file(fname=f'denelezh_label_biases.tsv',
+                                       schema_table=label_misc,
+                                       table_tsv_map={'src': 'id', 'lang': 'lang', 'label': 'label', 'type':'type'},
+                                       data_dir=data_dir,
+                                       fills=None)
+    print(f'inserted: {len(bias_labels)} bias_labels')
+
 
 def make_country_misc_iso(data_dir):
     country_misc_iso = make_table_exactly_from_file(fname='wdqs_country_labels_iso.tsv',
@@ -185,12 +195,6 @@ def insert_data(data_dir='example_data', example_len=10, num_fills=2):
                                   data_dir=data_dir,
                                   fills=just_latest_fill)
     print(f'inserted: {len(labels)} labels')
-    bias_labels = make_table_from_file(fname=f'denelezh_label_biases.tsv',
-                                       schema_table=label,
-                                       table_tsv_map={'qid': 'id', 'lang': 'lang', 'label': 'label'},
-                                       data_dir=data_dir,
-                                       fills=just_latest_fill)
-    print(f'inserted: {len(bias_labels)} bias_labels')
     labels_misc = make_table_exactly_from_file(fname=f'denelezh_project.tsv',
                                        schema_table=label_misc,
                                        table_tsv_map={'src': 'code', 'label': 'label', 'lang':'lang', 'type':'type'},
@@ -234,19 +238,21 @@ def insert_data(data_dir='example_data', example_len=10, num_fills=2):
     projects = make_projects(data_dir=data_dir)
     print(f'inserted: {len(projects)} projects')
 
-    label_misc = make_label_misc(data_dir=data_dir)
+    label_misc = make_label_misc_project(data_dir=data_dir)
     print(f'inserted: {len(label_misc)} label misc')
-
-
-
-
 
     return curr_fill
 
 
 
 if __name__ == "__main__":
-    clear_misc_tables()
-    make_projects(data_dir='example_data')
-    make_country_misc_iso(data_dir='example_data')
-    make_label_misc(data_dir='example_data')
+    fn_name = sys.argv[1] if len(sys.argv) >= 2 else None
+    data_dir = 'example_data'
+    if fn_name is None:
+        clear_misc_tables()
+        make_projects(data_dir=data_dir)
+        make_country_misc_iso(data_dir=data_dir)
+        make_label_misc_project(data_dir=data_dir)
+        make_label_misc_gender_labels(data_dir=data_dir)
+    else:
+        locals()[fn_name](data_dir=data_dir)

@@ -68,6 +68,22 @@ WHERE
 }
 limit 2000
 ```
+```
+#     public static final String ITEM_GENDER_IDENTITY = "Q48264";
+#     public static final String ITEM_SEX_OF_HUMANS = "Q4369513";
+# 
+SELECT DISTINCT ?gender ?genderLabel ?lang
+WHERE
+{
+  ?gender wdt:P31 wd:Q48264.
+  
+  BIND("en" as ?lang).
+
+ 
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "en" }
+}
+ORDER BY ?genderLabel
+```
 
 ## troubleshooting 
 

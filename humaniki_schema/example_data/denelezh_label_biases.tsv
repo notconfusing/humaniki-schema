@@ -1,7 +1,43 @@
-id	label	lang
-6581097	men	en
-6581072	women	en
-2449503	transgender male	en
-6581097	masculin	fr
-6581072	féminin	fr
-2449503	homme trans	fr
+id	label	lang	type
+6581097	men	en	bias
+6581072	women	en	bias
+2449503	transgender male	en	bias
+96000630	X-gender	en	bias
+505371	agender	en	bias
+97595519	androgyne	en	bias
+97577404	aporagender	en	bias
+859614	bigender	en	bias
+15145779	cisgender female	en	bias
+15145778	cisgender male	en	bias
+1093205	cisgender person	en	bias
+93954933	demiboy	en	bias
+63715923	demigender	en	bias
+93955709	demigirl	en	bias
+1399232	fa'afafine	en	bias
+350374	fakaleitī	en	bias
+6581072	female	en	bias
+99485732	gendered	en	bias
+18116794	genderfluid	en	bias
+12964198	genderqueer	en	bias
+660882	hijra	en	bias
+11713472	intergender	en	bias
+746411	kathoey	en	bias
+6581097	male	en	bias
+82028886	maverique	en	bias
+3277905	māhū	en	bias
+1289754	neutrois	en	bias
+48270	non-binary	en	bias
+7130936	pangender	en	bias
+64606208	polygender	en	bias
+3404005	questioning	en	bias
+27679684	transfeminine	en	bias
+1052281	transgender female	en	bias
+2449503	transgender male	en	bias
+189125	transgender person	en	bias
+27679766	transmasculine	en	bias
+190965	transsexuality	en	bias
+17148251	travesti	en	bias
+7841680	trigender	en	bias
+301702	two-spirit	en	bias
+8025501	winkte	en	bias
+8053770	yinyang ren	en	bias
