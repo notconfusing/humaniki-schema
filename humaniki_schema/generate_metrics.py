@@ -37,11 +37,12 @@ class MetricFactory():
             self.curr_fill, self.curr_fill_date = get_exact_fill_id(self.db_session, fill_dt)
         self.metric_combinations = None
         self.metric_creators = []
-        self.max_comb_len = self.config_generation['max_combination_len'] if 'max_combination_len' in self.config_generation else None
 
     def _generate_metric_combinations(self):
         try:
             combination_config = self.config_generation['combination']
+            max_comb_len = combination_config['max_combination_len'] if 'max_combination_len' in combination_config else None
+
             bias_prop = get_enum_from_str(Properties, combination_config['bias'])
             all_dimensions = [get_enum_from_str(Properties, dim_str) for dim_str in combination_config['dimensions']]
             all_pop_defns = [get_enum_from_str(PopulationDefinition, pop_str) for pop_str in combination_config['population_definitions']]
@@ -55,8 +56,8 @@ class MetricFactory():
         for comb_len_zero_index in range(len(all_dimensions)):
             comb_len = comb_len_zero_index + 1  # 1-index
             # check if max combination length is set and if we are passed it
-            if self.max_comb_len and comb_len > self.max_comb_len:
-                print(f'Not configured to generate combinations greater than {self.max_comb_len}')
+            if max_comb_len and comb_len > max_comb_len:
+                print(f'Not configured to generate combinations greater than {max_comb_len}')
                 continue
             else:
                 r_len_combs = list(combinations(all_dimensions, r=comb_len))
