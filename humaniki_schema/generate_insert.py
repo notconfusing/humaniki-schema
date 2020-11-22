@@ -43,7 +43,7 @@ def make_fills(n=2):
     for i in range(n):
         date = datetime.date(2018, 1, 1) + datetime.timedelta(weeks=i)
         ftype = hs_utils.FillType.DUMP.value
-        detail = {'i': i, 'i_str': str(i), 'active': True}
+        detail = {'active': True}
         a_fill = fill(date=date, type=ftype, detail=detail)
         fills.append(a_fill)
 

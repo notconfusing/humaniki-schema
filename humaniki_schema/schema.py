@@ -19,6 +19,13 @@ class fill(Base):
     type                = Column(TINYINT) #an enum
     detail              = Column(JSON) # include whether this is a front or back fill and provenance
 
+    def to_dict(self):
+        return {"id": self.id,
+                "date": self.date,
+                "type": hs_utils.FillType(self.type).name,
+                "detail" : self.detail,
+                }
+
 
 class metric(Base):
     __tablename__ = 'metric'
