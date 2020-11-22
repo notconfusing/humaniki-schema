@@ -2,9 +2,7 @@ import datetime
 import os
 import sys
 
-from humaniki_schema.schema import fill, human, human_country, human_occupation, human_property, human_sitelink, label, \
-    metric, metric_properties_j, metric_properties_n, metric_aggregations_j, metric_aggregations_n, metric_coverage, \
-    project, label_misc
+from humaniki_schema.schema import fill, human, human_country, human_occupation, human_property, human_sitelink, label_misc, label, metric, metric_properties_j, metric_properties_n, metric_aggregations_j, metric_aggregations_n, metric_coverage,project
 import humaniki_schema.utils as hs_utils
 
 try:
@@ -55,22 +53,31 @@ def make_fills(n=2):
     return fills
 
 
-def make_humans(example_len, data_dir, fills):
+def make_humans(example_len, data_dir, fills, fake_by_subset=True):
     humans_f = os.path.join(data_dir, f'denelezh_humans_{example_len}.tsv')
     humans_df = pd.read_csv(humans_f, sep='\t').rename(columns={"birthyear": 'year_of_birth'})
     humans_df['year_of_death'] = humans_df['year_of_birth'].apply(lambda yob: yob + 100 if yob is not None else None)
     humans_df = humans_df.replace(dict(year_of_birth={np.nan: None}, year_of_death={np.nan: None}))
+    len_humans_df = len(humans_df)
+    half_length_human_df = int(len_humans_df/2)
     humans = []
 
+    first_fill_id = fills[0].id
     for fill in fills:
         fill_id = fill.id
+        is_first_fill = fill_id == first_fill_id
         for ind, row in humans_df.iterrows():
-            a_human = human(fill_id=fill_id, qid=row['id'],
-                            year_of_birth=row['year_of_birth'],
-                            year_of_death=row['year_of_death'],
-                            gender=row['gender'],
-                            sitelink_count=row['sitelinks'])
-            humans.append(a_human)
+            # make two kind of distinct subsets by setting the first one to be only half the length
+            if fake_by_subset and is_first_fill and ind > half_length_human_df:
+                print(f'faking by skipping')
+                continue
+            else:
+                a_human = human(fill_id=fill_id, qid=row['id'],
+                                year_of_birth=row['year_of_birth'],
+                                year_of_death=row['year_of_death'],
+                                gender=row['gender'],
+                                sitelink_count=row['sitelinks'])
+                humans.append(a_human)
 
     db_session.rollback()
     db_session.add_all(humans)
@@ -161,7 +168,7 @@ def make_table_exactly_from_file(fname, schema_table, table_tsv_map, data_dir, f
     return insert_rows
 
 
-def insert_data(data_dir='example_data', example_len=10, num_fills=2):
+def insert_data(data_dir='example_data', example_len=500, num_fills=2):
     clear_tables(all_tables)
     fills = make_fills(num_fills)
 
@@ -171,37 +178,43 @@ def insert_data(data_dir='example_data', example_len=10, num_fills=2):
 
     humans = make_humans(example_len, data_dir, fills)
     print(f'inserted: {len(humans)} humans')
+
     countries = make_table_from_file(fname=f'denelezh_human_country_{example_len}.tsv',
                                      schema_table=human_country,
                                      table_tsv_map={'human_id': 'human', 'country': 'country'},
                                      data_dir=data_dir,
                                      fills=fills)
     print(f'inserted: {len(countries)} countries')
+
     occupations = make_table_from_file(fname=f'denelezh_human_occupation_{example_len}.tsv',
                                        schema_table=human_occupation,
                                        table_tsv_map={'human_id': 'human', 'occupation': 'occupation'},
                                        data_dir=data_dir,
                                        fills=fills)
     print(f'inserted: {len(occupations)} occupations')
+
     sitelinks = make_table_from_file(fname=f'denelezh_human_sitelink_{example_len}.tsv',
                                      schema_table=human_sitelink,
                                      table_tsv_map={'human_id': 'human', 'sitelink': 'sitelink'},
                                      data_dir=data_dir,
                                      fills=fills)
     print(f'inserted: {len(sitelinks)} sitelinks')
+
     labels = make_table_from_file(fname=f'denelezh_label_{example_len}.tsv',
                                   schema_table=label,
                                   table_tsv_map={'qid': 'id', 'lang': 'lang', 'label': 'label'},
                                   data_dir=data_dir,
                                   fills=just_latest_fill)
     print(f'inserted: {len(labels)} labels')
-    labels_misc = make_table_exactly_from_file(fname=f'denelezh_project.tsv',
+
+    label_miscs = make_table_exactly_from_file(fname=f'denelezh_project.tsv',
                                        schema_table=label_misc,
                                        table_tsv_map={'src': 'code', 'label': 'label', 'lang':'lang', 'type':'type'},
                                        data_dir=data_dir,
                                        fills=None,
                                        extra_const_cols={'lang':'en', 'type':'project'})
-    print(f'inserted: {len(labels_misc)} labels_misc')
+    print(f'inserted: {len(label_miscs)} labels_misc')
+
     labels_misc_fr = make_table_exactly_from_file(fname=f'denelezh_project_frfake.tsv',
                                        schema_table=label_misc,
                                        table_tsv_map={'src': 'code', 'label': 'label', 'lang':'lang', 'type':'type'},
@@ -238,8 +251,8 @@ def insert_data(data_dir='example_data', example_len=10, num_fills=2):
     projects = make_projects(data_dir=data_dir)
     print(f'inserted: {len(projects)} projects')
 
-    label_misc = make_label_misc_project(data_dir=data_dir)
-    print(f'inserted: {len(label_misc)} label misc')
+    label_miscs = make_label_misc_project(data_dir=data_dir)
+    print(f'inserted: {len(label_miscs)} label misc')
 
     return curr_fill
 

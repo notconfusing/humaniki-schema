@@ -9,6 +9,7 @@ import os
 from sqlalchemy.orm import aliased
 
 from humaniki_schema.generate_insert import insert_data
+from humaniki_schema.generate_metrics import MetricFactory
 from humaniki_schema.queries import get_properties_obj, get_aggregations_obj, get_latest_fill_id, AggregationIdGetter
 from humaniki_schema.schema import fill, human, human_country, human_occupation, human_property, human_sitelink, label, \
     metric, metric_properties_j, metric_properties_n, metric_aggregations_j, metric_aggregations_n, metric_coverage, \
@@ -151,7 +152,7 @@ def insert_metrics(bias, props, metric_rows, curr_fill, population_id=None):
     return sf_metrics
 
 
-def generate_all(config=None):
+def generate_all(config=None, metrics_method='auto'):
     start_time = time.time()
 
     if config is None:
@@ -166,27 +167,37 @@ def generate_all(config=None):
     else:
         curr_fill, curr_fill_date = get_latest_fill_id(db_session)
 
-    if 'geo' not in skip_steps:
-        geom = create_geo_metrics(curr_fill)
-        print(f'created geo metrics that have len {len(geom)}')
-        end_time = time.time()
-        print(f'Generating data took {end_time-start_time} seconds')
+    if metrics_method == 'auto':
+        # let hte metrics factory take care of it
+        fill_dts = db_session.query(fill.date).all()
+        fill_dt_strs = [f[0].strftime('%Y%m%d') for f in fill_dts]
+        for fill_dt_str in fill_dt_strs:
+            mf = MetricFactory(os.environ['HUMANIKI_YAML_CONFIG'], fill_dt_str=fill_dt_str)
+            mf.run()
 
-    if 'sitelinks' not in skip_steps:
-        slm = create_sitelink_metrics(curr_fill)
-        print(f'created sitelink metrics that have len {len(slm)}')
-        end_time = time.time()
-        print(f'Generating data took {end_time-start_time} seconds')
+    elif metrics_method != 'auto':
+        # do some manual calculations
+        if 'geo' not in skip_steps:
+            geom = create_geo_metrics(curr_fill)
+            print(f'created geo metrics that have len {len(geom)}')
+            end_time = time.time()
+            print(f'Generating data took {end_time-start_time} seconds')
 
-    if 'dob' not in skip_steps:
-        dobm = create_dob_metrics(curr_fill)
-        print(f'created date of birth metrics that have len {len(dobm)}')
-        end_time = time.time()
-        print(f'Generating data took {end_time-start_time} seconds')
+        if 'sitelinks' not in skip_steps:
+            slm = create_sitelink_metrics(curr_fill)
+            print(f'created sitelink metrics that have len {len(slm)}')
+            end_time = time.time()
+            print(f'Generating data took {end_time-start_time} seconds')
 
-    if 'proj_cit' not in skip_steps:
-        proj_cit_m = create_proj_cit_metrics(curr_fill)
-        print(f'created date of projxcit metrics that have len {len(proj_cit_m)}')
+        if 'dob' not in skip_steps:
+            dobm = create_dob_metrics(curr_fill)
+            print(f'created date of birth metrics that have len {len(dobm)}')
+            end_time = time.time()
+            print(f'Generating data took {end_time-start_time} seconds')
+
+        if 'proj_cit' not in skip_steps:
+            proj_cit_m = create_proj_cit_metrics(curr_fill)
+            print(f'created date of projxcit metrics that have len {len(proj_cit_m)}')
 
     db_session.commit()
     return True
