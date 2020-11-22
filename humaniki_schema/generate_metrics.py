@@ -28,6 +28,7 @@ class MetricFactory():
     """
     def __init__(self, config, db_session=None, fill_dt_str=None):
         self.config = read_config_file(config, __file__)
+        self.config_generation = self.config['generation']
         self.db_session = db_session if db_session else session_factory()
         if fill_dt_str is None:
             self.curr_fill, self.curr_fill_date = get_latest_fill_id(self.db_session)
@@ -36,10 +37,11 @@ class MetricFactory():
             self.curr_fill, self.curr_fill_date = get_exact_fill_id(self.db_session, fill_dt)
         self.metric_combinations = None
         self.metric_creators = []
+        self.max_comb_len = self.config_generation['max_combination_len'] if 'max_combination_len' in self.config_generation else None
 
     def _generate_metric_combinations(self):
         try:
-            combination_config = self.config['generation']['combination']
+            combination_config = self.config_generation['combination']
             bias_prop = get_enum_from_str(Properties, combination_config['bias'])
             all_dimensions = [get_enum_from_str(Properties, dim_str) for dim_str in combination_config['dimensions']]
             all_pop_defns = [get_enum_from_str(PopulationDefinition, pop_str) for pop_str in combination_config['population_definitions']]
@@ -52,9 +54,14 @@ class MetricFactory():
         dimension_combinations = []
         for comb_len_zero_index in range(len(all_dimensions)):
             comb_len = comb_len_zero_index + 1  # 1-index
-            r_len_combs = list(combinations(all_dimensions, r=comb_len))
-            print(f'{len(r_len_combs)} of length {comb_len}')
-            dimension_combinations.extend(r_len_combs)
+            # check if max combination length is set and if we are passed it
+            if self.max_comb_len and comb_len > self.max_comb_len:
+                print(f'Not configured to generate combinations greater than {self.max_comb_len}')
+                continue
+            else:
+                r_len_combs = list(combinations(all_dimensions, r=comb_len))
+                print(f'{len(r_len_combs)} of length {comb_len}')
+                dimension_combinations.extend(r_len_combs)
 
         # second product the dimension combinations with the population definitions
         dim_pop_combs_res = product(dimension_combinations, all_pop_defns)
@@ -79,8 +86,8 @@ class MetricFactory():
         print(f"Initialised number of metrics: {len(self.metric_creators)}")
 
     def _run_metric_creators(self):
-        strategy_defined = 'execution_strategy' in self.config['generation']
-        strategy_sequential = strategy_defined and self.config['generation']['execution_stragey'] == 'sequential'
+        strategy_defined = 'execution_strategy' in self.config_generation
+        strategy_sequential = strategy_defined and self.config_generation['execution_stragey'] == 'sequential'
         if (not strategy_defined) or strategy_sequential:
             # do the sequential
             for mc in self.metric_creators:
