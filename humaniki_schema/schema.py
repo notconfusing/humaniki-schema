@@ -21,7 +21,7 @@ class fill(Base):
 
     def to_dict(self):
         return {"id": self.id,
-                "date": self.date,
+                "date": self.date.strftime(hs_utils.HUMANIKI_SNAPSHOT_DATE_FMT),
                 "type": hs_utils.FillType(self.type).name,
                 "detail" : self.detail,
                 }
