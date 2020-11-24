@@ -222,12 +222,51 @@ class MetricCreator():
         except:
             raise
 
+    def _db_save(self, orm_obj_list, method='bulk_save_objects'):
+        db_save_fn = getattr(self.db_session, method)
+        try:
+            db_save_fn(orm_obj_list)
+            self.db_session.commit()
+        except sqlalchemy.exc.IntegrityError as insert_error:
+            if insert_error.orig.args[1].startswith('Duplicate entry'):
+                print('attempting to add a metric thats already been added')
+                pass
+            else:
+                raise insert_error
+        # try:
+        #     self.db_session.add_all(self.insert_metrics)
+        #     self.db_session.commit()
+        # except sqlalchemy.exc.IntegrityError:
+        #     # try one by one
+        #     for insert_metric in self.insert_metrics:
+        #         try:
+        #             self.db_session.add(insert_metric)
+        #         except sqlalchemy.exc.IntegrityError as ie:
+        #             if ie.code == 1062: # duplicate
+        #                 print(f'duplicate error on {insert_metric}')
+        #             else:
+        #                 self.db_session.rollback()
+        #                 raise
+
+
     def persist(self):
         self.aggregation_getter.get_all_known_aggregations_of_props()
         # these remain static
         for row_i, row in enumerate(self.metric_res):
             if row_i % 1000 == 0:
                 print(row_i)
+                save_try_count = 0
+                while -1 < save_try_count < 3:
+                    save_try_count += 1
+                    try:
+                        self._db_save(orm_obj_list=self.insert_metrics)
+                        save_try_count = -1
+                    except sqlalchemy.exc.InvalidRequestError:
+                        self.db_session.rollback()
+                        time.sleep(1)
+                if save_try_count == -1:
+                    self.insert_metrics = [] # emulating saving in batches of 1000
+
             # TODO do this by name lookup not positions
             gender = row[0]
             count = row[-1]
@@ -248,26 +287,6 @@ class MetricCreator():
                               bias_value=gender,
                               total=count)
             self.insert_metrics.append(a_metric)
-        # try:
-        #     db_session.bulk_save_objects(sf_metrics)
-        # except sqlalchemy.exc.IntegrityError as insert_error:
-        #     if insert_error.orig.args[1].startswith('Duplicate entry'):
-        #         print('attempting to add a metric thats already been added')
-        #         db_session.rollback()
-        try:
-            self.db_session.add_all(self.insert_metrics)
-            self.db_session.commit()
-        except sqlalchemy.exc.IntegrityError:
-            # try one by one
-            for insert_metric in self.insert_metrics:
-                try:
-                    self.db_session.add(insert_metric)
-                except sqlalchemy.exc.IntegrityError as ie:
-                    if ie.code == 1062: # duplicate
-                        print(f'duplicate error on {insert_metric}')
-                    else:
-                        self.db_session.rollback()
-                        raise
         return
 
     def run(self):
