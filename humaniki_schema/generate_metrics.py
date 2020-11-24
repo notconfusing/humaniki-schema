@@ -55,7 +55,7 @@ class MetricFactory():
         dimension_combinations = []
         for comb_len in range(len(all_dimensions)+1): # +1 because zero indexed
             # check if max combination length is set and if we are passed it
-            if max_comb_len and comb_len > max_comb_len:
+            if max_comb_len is not None and comb_len > max_comb_len:
                 print(f'Not configured to generate combinations greater than {max_comb_len}')
                 continue
             else:
@@ -287,6 +287,10 @@ class MetricCreator():
                               bias_value=gender,
                               total=count)
             self.insert_metrics.append(a_metric)
+
+        #the last bits
+        self._db_save(orm_obj_list=self.insert_metrics)
+
         return
 
     def run(self):
