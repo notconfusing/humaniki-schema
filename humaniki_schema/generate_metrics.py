@@ -53,8 +53,7 @@ class MetricFactory():
 
         # first create the dimensional combinations
         dimension_combinations = []
-        for comb_len_zero_index in range(len(all_dimensions)):
-            comb_len = comb_len_zero_index + 1  # 1-index
+        for comb_len in range(len(all_dimensions)+1): # +1 because zero indexed
             # check if max combination length is set and if we are passed it
             if max_comb_len and comb_len > max_comb_len:
                 print(f'Not configured to generate combinations greater than {max_comb_len}')
@@ -267,8 +266,8 @@ class MetricCreator():
                     if ie.code == 1062: # duplicate
                         print(f'duplicate error on {insert_metric}')
                     else:
-                        raise
                         self.db_session.rollback()
+                        raise
         return
 
     def run(self):

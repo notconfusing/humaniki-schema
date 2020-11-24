@@ -135,6 +135,7 @@ def make_label_misc_gender_labels(data_dir):
                                        data_dir=data_dir,
                                        fills=None)
     print(f'inserted: {len(bias_labels)} bias_labels')
+    return bias_labels
 
 
 def make_country_misc_iso(data_dir):
@@ -252,6 +253,9 @@ def insert_data(data_dir='example_data', example_len=500, num_fills=2):
     print(f'inserted: {len(projects)} projects')
 
     label_miscs = make_label_misc_project(data_dir=data_dir)
+    print(f'inserted: {len(label_miscs)} label misc')
+
+    label_miscs = make_label_misc_gender_labels(data_dir=data_dir)
     print(f'inserted: {len(label_miscs)} label misc')
 
     return curr_fill
