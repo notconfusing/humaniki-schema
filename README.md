@@ -19,7 +19,7 @@
 
 -docker start some-mysql 
 ### sql config
-in /etc/mysql/my.cnf
+in /etc/mysql/my.cnf (you may have to add a `[mysqld]` section)
 `secure-file-priv= /data/project/denelezh`
 
 
@@ -30,12 +30,14 @@ in /etc/mysql/my.cnf
 - `pipenv install`
 
 ### alembic
-- alembic init alembic
-
+- `alembic init alembic` or `cp alembic.ini.sample alembic.ini`
+- `alembic upgrade head`
 
 ### starting mysql server
 docker start some-mysql
 
+### production notes
+due to wiketech labs config, storing code at /srv/humaniki
 
 
 
@@ -90,7 +92,7 @@ ORDER BY ?genderLabel
 - If you can't connect to database check if docker container is running 
 - `docker ps`
 -If the container isn't running you need to run the following: 
--`docker start humaniki-mysql`
+-`docker start humaniki-ql`
 - You should see an entry to some-mysql
 
 -Then try to connect to my-sql using the command line client with the humaniki user
