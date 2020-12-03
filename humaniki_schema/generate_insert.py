@@ -116,16 +116,18 @@ def make_projects(data_dir):
                                                            'url': 'url'},
                                             data_dir=data_dir,
                                             fills=None)
+    print(f'inserted: {len(projects)} projects')
     return projects
 
 def make_label_misc_project(data_dir):
     """seperate because project data needs to be migrated first-setup scenarios"""
     labels_misc = make_table_exactly_from_file(fname=f'denelezh_project.tsv',
-                                       schema_table=label_misc,
-                                       table_tsv_map={'src': 'code', 'label': 'label', 'lang':'lang', 'type':'type'},
-                                       data_dir=data_dir,
-                                       fills=None,
-                                       extra_const_cols={'lang':'en', 'type':'project'})
+                                               schema_table=label_misc,
+                                               table_tsv_map={'src': 'code', 'label': 'label', 'lang':'lang', 'type':'type'},
+                                               data_dir=data_dir,
+                                               fills=None,
+                                               extra_const_cols={'lang':'en', 'type':'project'})
+    print(f'inserted: {len(labels_misc)} label_misc')
     return labels_misc
 
 def make_label_misc_gender_labels(data_dir):
@@ -140,12 +142,13 @@ def make_label_misc_gender_labels(data_dir):
 
 def make_country_misc_iso(data_dir):
     country_misc_iso = make_table_exactly_from_file(fname='wdqs_country_labels_iso.tsv',
-                                 schema_table=label_misc,
-                                 table_tsv_map={'src': 'id', 'label': 'label',
-                                                'lang': 'lang', 'type': 'type'},
-                                 data_dir=data_dir,
-                                 fills=None,
-                                 extra_const_cols={'type': 'iso_3166'})
+                                                    schema_table=label_misc,
+                                                    table_tsv_map={'src': 'id', 'label': 'label',
+                                                                   'lang': 'lang', 'type': 'type'},
+                                                    data_dir=data_dir,
+                                                    fills=None,
+                                                    extra_const_cols={'type': 'iso_3166'})
+    print(f'inserted: {len(country_misc_iso)} country misc isos')
     return country_misc_iso
 
 def make_table_exactly_from_file(fname, schema_table, table_tsv_map, data_dir, fills, extra_const_cols=None):
