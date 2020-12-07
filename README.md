@@ -9,12 +9,13 @@
 ### mysql8.0
 - Following instructions from 
 - `docker run --name humaniki-mysql -e MYSQL_ROOT_PASSWORD=my-secret-pw -p 3306:3306 -v /data/project/denelezh:/data/project/denelezh -d mysql:latest`
+    - note on Mac OSX: in new OSX's you can't make a user-defined directory in root, so you will need to mount your volumes more like `-v /Uesrs/me/data:/Users/me/data`
 - `docker exec -it humaniki-mysql bash`
 - `mysql -uroot -h localhost -p` #from inside the docker container 
 - CREATE DATABASE `humaniki` DEFAULT CHARACTER SET 'utf8mb4';
 - CREATE USER 'humaniki'@'localhost' IDENTIFIED BY 'xxxxxxx'; #exclude identified by for brew no password #use "IDENTIFIED WITH  ; #exclude identified by for brew no password
 - GRANT ALL ON `humaniki`.* TO 'humaniki'@'localhost';
-- GRANT ALL ON `humaniki`.* TO 'humaniki'@'127.0.0.1'; #double check for 172.0.xxx aka docker container IP address 
+- GRANT ALL ON `humaniki`.* TO 'humaniki'@'127.0.0.1'; #double check for 172.17.0.1 aka docker container IP address 
 - GRANT FILE on *.* to 'humaniki'@'localhost';
 
 -docker start some-mysql 
@@ -33,8 +34,14 @@ in /etc/mysql/my.cnf (you may have to add a `[mysqld]` section)
 - `alembic init alembic` or `cp alembic.ini.sample alembic.ini`
 - `alembic upgrade head`
 
+### inserting static needed tables from csv, like project
+- `python generate_insert.py` directly 
 ### starting mysql server
 docker start some-mysql
+
+### airflow and pipenv
+- apparently they don't play well together so you may need to do inside of a pipenv shell
+- `pip install apache-airflow==1.10.13`
 
 ### production notes
 due to wiketech labs config, storing code at /srv/humaniki

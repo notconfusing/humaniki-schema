@@ -9,20 +9,23 @@ WMF_TIMESTAMP_FMT = '%a %b %d %H:%M:%S %z %Y'
 HUMANIKI_SNAPSHOT_DATE_FMT = '%Y%m%d'
 HUMANIKI_SNAPSHOT_DATETIME_FMT = '%Y%m%d %H:%M:%S'
 
+
 def make_fill_dt(snapshot_str):
     return datetime.strptime(snapshot_str, HUMANIKI_SNAPSHOT_DATE_FMT)
 
 
 class Properties(Enum):
-    PROJECT = 0 # faking this as P0
+    PROJECT = 0  # faking this as P0
     CITIZENSHIP = 27
     DATE_OF_BIRTH = 569
     DATE_OF_DEATH = 570
     OCCUPATION = 106
     GENDER = 21
 
+
 def order_props(props):
     return sorted(props, key=lambda p: p.value)
+
 
 class FillType(Enum):
     DUMP = 1
@@ -33,10 +36,26 @@ class MetricFacets(Enum):
     GEOGRAPHY = 1
     EVENT_YEAR = 2
 
+
 class PopulationDefinition(Enum):
     ALL_WIKIDATA = 1
     GTE_ONE_SITELINK = 2
     # SITELINK_MULTIPLICITY = 3
+
+
+class JobType(Enum):
+    DUMP_PARSE = 1
+    INSERT = 2
+    METRIC_CREATE = 3
+
+
+class JobState(Enum):
+    UNATTEMPTED = 1
+    IN_PROGRESS = 2
+    COMPLETE = 3
+    NEEDS_RETRY = 4
+    FAILED = 5
+
 
 def get_enum_from_str(enum_class, s):
     try:
@@ -57,11 +76,12 @@ def read_config_file(config_file_name, caller__file__):
             config_loc = os.path.join(ancestor_dir, 'config', config_file_name)
             config = yaml.safe_load(open(config_loc, 'r'))
             if config:
-               return config
+                return config
         except FileNotFoundError:
-                pass
+            pass
     # we got to the end without finding a config
     raise FileNotFoundError(config_file_name)
+
 
 def make_dump_date_from_str(datestr):
     return datetime.strptime(datestr, '%Y%m%d').date()

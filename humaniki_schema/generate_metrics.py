@@ -1,3 +1,4 @@
+import datetime
 import gc
 import os
 import sys
@@ -7,15 +8,19 @@ from itertools import combinations, product
 import sqlalchemy
 
 from sqlalchemy import func, and_
+from sqlalchemy.orm.attributes import flag_modified
+from sqlalchemy.sql.functions import count
 from sqlalchemy.sql.operators import isnot
 
 from humaniki_schema.queries import get_latest_fill_id, AggregationIdGetter, get_properties_obj, NoSuchWikiError, \
     get_exact_fill_id
 from humaniki_schema.db import session_factory
-from humaniki_schema.schema import human, human_sitelink, human_country, human_occupation, metric
-from humaniki_schema.utils import Properties, PopulationDefinition, get_enum_from_str, read_config_file, make_dump_date_from_str
+from humaniki_schema.schema import human, human_sitelink, human_country, human_occupation, metric, job
+from humaniki_schema.utils import Properties, PopulationDefinition, get_enum_from_str, read_config_file, \
+    make_dump_date_from_str, JobType, JobState
 
 import logging
+
 
 class MetricFactory():
     """
@@ -26,6 +31,7 @@ class MetricFactory():
       - executing them
     - creating the aggregation_id and property_id tables first if necessary, or cacheing them in memory for fast access
     """
+
     def __init__(self, config, db_session=None, fill_dt_str=None):
         self.config = read_config_file(config, __file__)
         self.config_generation = self.config['generation']
@@ -36,16 +42,18 @@ class MetricFactory():
             fill_dt = make_dump_date_from_str(fill_dt_str)
             self.curr_fill, self.curr_fill_date = get_exact_fill_id(self.db_session, fill_dt)
         self.metric_combinations = None
-        self.metric_creators = []
-
+        self.metric_creator = None
+        self.metric_job = None
     def _generate_metric_combinations(self):
         try:
             combination_config = self.config_generation['combination']
-            max_comb_len = combination_config['max_combination_len'] if 'max_combination_len' in combination_config else None
+            max_comb_len = combination_config[
+                'max_combination_len'] if 'max_combination_len' in combination_config else None
 
             bias_prop = get_enum_from_str(Properties, combination_config['bias'])
             all_dimensions = [get_enum_from_str(Properties, dim_str) for dim_str in combination_config['dimensions']]
-            all_pop_defns = [get_enum_from_str(PopulationDefinition, pop_str) for pop_str in combination_config['population_definitions']]
+            all_pop_defns = [get_enum_from_str(PopulationDefinition, pop_str) for pop_str in
+                             combination_config['population_definitions']]
         except KeyError:
             bias_prop = Properties.GENDER
             all_dimensions = [p for p in Properties.__members__.values() if p != bias_prop]
@@ -53,7 +61,7 @@ class MetricFactory():
 
         # first create the dimensional combinations
         dimension_combinations = []
-        for comb_len in range(len(all_dimensions)+1): # +1 because zero indexed
+        for comb_len in range(len(all_dimensions) + 1):  # +1 because zero indexed
             # check if max combination length is set and if we are passed it
             if max_comb_len is not None and comb_len > max_comb_len:
                 print(f'Not configured to generate combinations greater than {max_comb_len}')
@@ -65,45 +73,142 @@ class MetricFactory():
 
         # second product the dimension combinations with the population definitions
         dim_pop_combs_res = product(dimension_combinations, all_pop_defns)
-        dim_pop_combs = [{"dimensions":dim_tuple,
-                          "population_definition":pop_defn,
-                          "bias":bias_prop} for (dim_tuple, pop_defn) in dim_pop_combs_res]
+        dim_pop_combs = [{"dimensions": dim_tuple,
+                          "population_definition": pop_defn,
+                          "bias": bias_prop} for (dim_tuple, pop_defn) in dim_pop_combs_res]
 
         num_dim_combs = len(dimension_combinations)
         num_pop_defns = len(all_pop_defns)
         print(f'{len(dim_pop_combs)}==?{num_dim_combs} * {num_pop_defns}')
         self.metric_combinations = dim_pop_combs
 
-    def _create_metric_creators(self):
+    def _get_metric_comb_as_job(self, metric_combination):
+        job_query = self.db_session.query(job).filter(
+            and_(job.job_type == JobType.METRIC_CREATE.value,
+                 job.detail["population_definition"] == metric_combination["population_definition"].value,
+                 job.detail["bias_property"] == metric_combination["bias"].value,
+                 job.detail["dimension_properties_len"] == len(metric_combination["dimensions"]),
+                 job.fill_id == self.curr_fill,
+                 ))
+
+        for i, dimension_property in enumerate(metric_combination["dimensions"]):
+            job_query = job_query.filter(
+                job.detail["dimension_properties"][i] == metric_combination["dimensions"][i].value)
+
+        # jq_str = job_query.statement.compile(compile_kwargs={"literal_binds":True}).string
+        job_or_none = job_query.one_or_none()
+        return job_or_none
+
+    def _persist_metric_combination_as_job(self, metric_combination):
+        mc_job = job(job_type=JobType.METRIC_CREATE.value,
+                     job_state=JobState.UNATTEMPTED.value,
+                     fill_id=self.curr_fill,
+                     detail={"population_definition": metric_combination["population_definition"].value,
+                             "bias_property": metric_combination["bias"].value,
+                             "dimension_properties": [d.value for d in metric_combination["dimensions"]],
+                             "dimension_properties_len": len(metric_combination["dimensions"]),
+                             "thresholds": None,
+                             })
+        self.db_session.add(mc_job)
+        self.db_session.commit()
+
+    def _persist_metric_combinations_as_jobs(self):
+        """
+        idempotently, store self.metric_combinations in the jobs table
+        """
+        # for each metrics_combination, attempt to get it's job row, if no exist--create.
         for metric_combination in self.metric_combinations:
-            mc = MetricCreator(population_definition=metric_combination['population_definition'],
-                               bias_property=metric_combination['bias'],
-                               dimension_properties=metric_combination['dimensions'],
-                               thresholds=None,
-                               fill_id=self.curr_fill,
-                               db_session=self.db_session)
-            self.metric_creators.append(mc)
-        print(f"Initialised number of metrics: {len(self.metric_creators)}")
+            job_or_none = self._get_metric_comb_as_job(metric_combination)
+            if job_or_none is not None:
+                print(f'Job already exists: {metric_combination}')
+            else:
+                self._persist_metric_combination_as_job(metric_combination)
+                print(f'Job added: {metric_combination}')
+
+    def _get_uncompleted_metric_create_jobs(self):
+        # check the number of inprogress as a safe guard
+        in_progress_job_count = self.db_session.query(job).filter(and_(job.job_type == JobType.METRIC_CREATE.value,
+                                                                       job.job_state == JobState.IN_PROGRESS.value
+                                                                       )).count()
+        print(f'In progress jobs: {in_progress_job_count}')
+
+        uncompleted_job_states = (JobState.UNATTEMPTED.value,
+                                  JobState.NEEDS_RETRY.value)
+        uncompleted_jobs_q = self.db_session.query(job).filter(and_(
+            job.job_type == JobType.METRIC_CREATE.value,
+            job.job_state.in_(uncompleted_job_states)
+        ))
+
+        uncompleted_jobs_count = uncompleted_jobs_q.count()
+        uncompleted_jobs_first = uncompleted_jobs_q.first()
+        print(f'There are {uncompleted_jobs_count} uncompleted jobs')
+        self.metric_job = uncompleted_jobs_first
+
+
+    def _create_metric_creators(self):
+        if self.metric_job is not None:
+            mc = MetricCreator(population_definition=PopulationDefinition(self.metric_job.detail["population_definition"]),
+                               bias_property=Properties(self.metric_job.detail['bias_property']),
+                               dimension_properties=[Properties(d) for d in self.metric_job.detail['dimension_properties']],
+                               thresholds=self.metric_job.detail['thresholds'],
+                               fill_id=self.metric_job.fill_id,
+                               db_session=session_factory()
+                               )
+            self.metric_creator = mc
+            print(f"hydrate metric creator")
+        else:
+            print(f'No metrics creator to hydrate')
 
     def _run_metric_creators(self):
-        strategy_defined = 'execution_strategy' in self.config_generation
-        strategy_sequential = strategy_defined and self.config_generation['execution_stragey'] == 'sequential'
-        if (not strategy_defined) or strategy_sequential:
-            # do the sequential
-            for mc in self.metric_creators:
-                print(f"Running: {mc}")
-                mc.run()
-                gc.collect()
-        else:
-            raise NotImplementedError
+        # strategy_defined = 'execution_strategy' in self.config_generation
+        # strategy_sequential = strategy_defined and self.config_generation['execution_stragey'] == 'sequential'
+        # if (not strategy_defined) or strategy_sequential:
+        # do the sequential
+        previous_errors = self.metric_job.errors
+        previous_errors = [] if previous_errors is None else previous_errors
+        self.metric_job.job_state = JobState.IN_PROGRESS.value
+        self.db_session.add(self.metric_job)
+        self.db_session.commit()
 
-    def run(self):
+        try:
+            # complete acttion
+            print(f"Running: {self.metric_creator}")
+            self.metric_creator.run()
+            self.metric_job.job_state = JobState.COMPLETE.value
+        except Exception as e:
+            print(f'Encountered {e}')
+            next_error = {str(datetime.datetime.utcnow()):str(e)}
+            total_errors = previous_errors + [next_error]
+            self.db_session.rollback()
+            self.metric_job.errors = total_errors
+            flag_modified(self.metric_job)
+            if len(total_errors) > 3: # TODO make this configurable
+                self.metric_job.job_state = JobState.FAILED.value
+            else:
+                self.metric_job.job_state = JobState.NEEDS_RETRY.value
+        finally:
+            self.db_session.add(self.metric_job)
+            self.db_session.commit()
+            success = self.metric_job.job_state == JobState.COMPLETE.value
+            correct_error_count = len(previous_errors) + 1 == len(self.metric_job.errors) if \
+                                    self.metric_job.errors is not None else True
+            assert success or correct_error_count
+
+    def create(self):
         metric_run_start = time.time()
         self._generate_metric_combinations()
+        self._persist_metric_combinations_as_jobs()
+        metric_run_end = time.time()
+        print(f'Metric Factory creation took {metric_run_end - metric_run_start} seconds')
+
+    def execute(self):
+        metric_run_start = time.time()
+        self._get_uncompleted_metric_create_jobs()
         self._create_metric_creators()
         self._run_metric_creators()
         metric_run_end = time.time()
-        print(f'Metric Factory took {metric_run_end-metric_run_start} seconds')
+        print(f'Metric Factory execute took {metric_run_end - metric_run_start} seconds')
+
 
 class MetricCreator():
     """
@@ -130,11 +235,11 @@ class MetricCreator():
     def __str__(self):
         return f"MetricCreator. bias:{self.bias_property.name}; dimensions:{','.join([d.name for d in self.dimension_properties])}; population:{self.population_definition.name} "
 
-
     def _get_metric_properties_id(self):
-        metric_properties = get_properties_obj(bias_property=self.bias_property.value, dimension_properties=self.dimension_properties_pids,
-                                     session=self.db_session,
-                                     create_if_no_exist=True)
+        metric_properties = get_properties_obj(bias_property=self.bias_property.value,
+                                               dimension_properties=self.dimension_properties_pids,
+                                               session=self.db_session,
+                                               create_if_no_exist=True)
         return metric_properties.id
 
     def _get_population_filter(self):
@@ -217,7 +322,7 @@ class MetricCreator():
 
     def execute(self):
         try:
-            self.db_session.rollback()
+            # self.db_session.rollback()
             self.metric_res = self.metric_q.all()
         except:
             raise
@@ -248,7 +353,6 @@ class MetricCreator():
         #                 self.db_session.rollback()
         #                 raise
 
-
     def persist(self):
         self.aggregation_getter.get_all_known_aggregations_of_props()
         # these remain static
@@ -265,21 +369,22 @@ class MetricCreator():
                         self.db_session.rollback()
                         time.sleep(1)
                 if save_try_count == -1:
-                    self.insert_metrics = [] # emulating saving in batches of 1000
+                    self.insert_metrics = []  # emulating saving in batches of 1000
 
             # TODO do this by name lookup not positions
             gender = row[0]
             count = row[-1]
             prop_vals = row[1:-1]
             # hope these align, this is why we need to do it by name
-            dimension_values = {prop_id: prop_val for prop_id, prop_val in zip(self.dimension_properties_pids, prop_vals)}
+            dimension_values = {prop_id: prop_val for prop_id, prop_val in
+                                zip(self.dimension_properties_pids, prop_vals)}
             bias_value = {self.bias_property.value: gender}
             try:
                 agg_vals_id = self.aggregation_getter.lookup(bias_value=bias_value,
-                                                         dimension_values=dimension_values)
+                                                             dimension_values=dimension_values)
             except NoSuchWikiError:
                 print(f'skipping something that dimension values {dimension_values}')
-                continue # if there's a new wiki, we won't count it
+                continue  # if there's a new wiki, we won't count it
             a_metric = metric(fill_id=self.fill_id,
                               population_id=self.population_definition.value,
                               properties_id=self.metric_properties_id,
@@ -288,7 +393,7 @@ class MetricCreator():
                               total=count)
             self.insert_metrics.append(a_metric)
 
-        #the last bits
+        # the last bits
         self._db_save(orm_obj_list=self.insert_metrics)
 
         return
@@ -301,11 +406,16 @@ class MetricCreator():
 
 
 if __name__ == '__main__':
-    dump_date = sys.argv[1] if len(sys.argv) >= 2 else None
+    create_execute = sys.argv[1] if len(sys.argv) >= 2 else None
+    dump_date = sys.argv[2] if len(sys.argv) >= 3 else None
     print(f'Specified dump date: {dump_date}')
     mf = MetricFactory(config=os.environ['HUMANIKI_YAML_CONFIG'],
                        fill_dt_str=dump_date)
-    mf.run()
+    if create_execute:
+        print(f"Attempting to run {create_execute} on metrics factory")
+        getattr(mf, create_execute)()
+
+    print("Generate metrics---DONE")
     # in the future metricfactor should fan this out to metriccreator via the config
     # mc = MetricCreator(population_definition=PopulationDefinition.GTE_ONE_SITELINK,
     #                    bias_property=Properties.GENDER,

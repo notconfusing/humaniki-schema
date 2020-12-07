@@ -160,3 +160,13 @@ class project(Base):
     label              = Column(TINYTEXT)
     url                = Column(TINYTEXT)
 
+
+class job(Base):
+    __tablename__ = 'job'
+    id                 = Column(Integer, primary_key=True)
+    created_at         = Column(DateTime, default=datetime.datetime.utcnow())
+    job_type           = Column(TINYINT, index=True) # an enum we'll set up in hs_utils
+    job_state          = Column(TINYINT, index=True) # an enum we'll set up in hs_utils
+    fill_id            = Column(Integer)
+    detail             = Column(JSON)
+    errors             = Column(TINYTEXT)

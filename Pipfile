@@ -20,4 +20,4 @@ pytest = "*"
 pyyaml = "*"
 
 [requires]
-python_verusion = "3.7"
+python_version = "3.7"
