@@ -169,4 +169,4 @@ class job(Base):
     job_state          = Column(TINYINT, index=True) # an enum we'll set up in hs_utils
     fill_id            = Column(Integer)
     detail             = Column(JSON)
-    errors             = Column(TINYTEXT)
+    errors             = Column(JSON)

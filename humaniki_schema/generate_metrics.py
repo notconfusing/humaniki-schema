@@ -158,6 +158,7 @@ class MetricFactory():
             print(f"hydrate metric creator")
         else:
             print(f'No metrics creator to hydrate')
+            sys.exit(29) #special signal to calling bash.
 
     def _run_metric_creators(self):
         # strategy_defined = 'execution_strategy' in self.config_generation
@@ -171,17 +172,17 @@ class MetricFactory():
         self.db_session.commit()
 
         try:
-            # complete acttion
+            # complete action
             print(f"Running: {self.metric_creator}")
             self.metric_creator.run()
             self.metric_job.job_state = JobState.COMPLETE.value
         except Exception as e:
             print(f'Encountered {e}')
-            next_error = {str(datetime.datetime.utcnow()):str(e)}
+            next_error = {str(datetime.datetime.utcnow()):repr(e)}
             total_errors = previous_errors + [next_error]
             self.db_session.rollback()
             self.metric_job.errors = total_errors
-            flag_modified(self.metric_job)
+            flag_modified(self.metric_job, 'errors')
             if len(total_errors) > 3: # TODO make this configurable
                 self.metric_job.job_state = JobState.FAILED.value
             else:
@@ -368,6 +369,8 @@ class MetricCreator():
                     except sqlalchemy.exc.InvalidRequestError:
                         self.db_session.rollback()
                         time.sleep(1)
+                    finally:
+                        self.db_session.close()
                 if save_try_count == -1:
                     self.insert_metrics = []  # emulating saving in batches of 1000
 

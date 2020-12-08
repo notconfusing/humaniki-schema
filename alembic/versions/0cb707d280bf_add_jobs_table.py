@@ -25,7 +25,7 @@ def upgrade():
     sa.Column('job_state', mysql.TINYINT(), nullable=True),
     sa.Column('fill_id', sa.Integer(), nullable=True),
     sa.Column('detail', sa.JSON(), nullable=True),
-    sa.Column('errors', mysql.TINYTEXT(), nullable=True),
+    sa.Column('errors', sa.JSON(), nullable=True),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_index(op.f('ix_job_job_state'), 'job', ['job_state'], unique=False)
