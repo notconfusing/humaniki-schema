@@ -1,7 +1,7 @@
 import os
 from enum import Enum
 # TODO, consider Immutable dict instead
-from datetime import datetime
+from datetime import datetime, date
 from pathlib import Path
 import yaml
 
@@ -84,4 +84,8 @@ def read_config_file(config_file_name, caller__file__):
 
 
 def make_dump_date_from_str(datestr):
-    return datetime.strptime(datestr, '%Y%m%d').date()
+    if isinstance(datestr, date):
+        # actually you passed a date already
+        return datestr
+    else:
+        return datetime.strptime(datestr, HUMANIKI_SNAPSHOT_DATE_FMT).date()

@@ -1,8 +1,6 @@
 HUMANIKI_COMPLETE_NUM=29
 HUMANIKI_GEN_PROCS=2
 
-
-
 generete_metrics_single_proc(){
 generate_complete=false
 

@@ -32,14 +32,14 @@ class MetricFactory():
     - creating the aggregation_id and property_id tables first if necessary, or cacheing them in memory for fast access
     """
 
-    def __init__(self, config, db_session=None, fill_dt_str=None):
+    def __init__(self, config, db_session=None, fill_date=None):
         self.config = read_config_file(config, __file__)
         self.config_generation = self.config['generation']
         self.db_session = db_session if db_session else session_factory()
-        if fill_dt_str is None:
+        if fill_date is None:
             self.curr_fill, self.curr_fill_date = get_latest_fill_id(self.db_session)
         else:
-            fill_dt = make_dump_date_from_str(fill_dt_str)
+            fill_dt = make_dump_date_from_str(fill_date)
             self.curr_fill, self.curr_fill_date = get_exact_fill_id(self.db_session, fill_dt)
         self.metric_combinations = None
         self.metric_creator = None
@@ -412,8 +412,7 @@ if __name__ == '__main__':
     create_execute = sys.argv[1] if len(sys.argv) >= 2 else None
     dump_date = sys.argv[2] if len(sys.argv) >= 3 else None
     print(f'Specified dump date: {dump_date}')
-    mf = MetricFactory(config=os.environ['HUMANIKI_YAML_CONFIG'],
-                       fill_dt_str=dump_date)
+    mf = MetricFactory(config=os.environ['HUMANIKI_YAML_CONFIG'], fill_date=dump_date)
     if create_execute:
         print(f"Attempting to run {create_execute} on metrics factory")
         getattr(mf, create_execute)()

@@ -8,7 +8,7 @@ from os import listdir
 
 from sqlalchemy.orm.attributes import flag_modified
 import humaniki_schema
-from humaniki_schema.queries import get_latest_fill_id
+from humaniki_schema.queries import get_latest_fill_id, get_exact_fill_id
 from humaniki_schema.schema import fill, human, human_country, human_occupation, human_property, human_sitelink, label, \
     metric, metric_properties_j, metric_properties_n, metric_aggregations_j, metric_aggregations_n, metric_coverage, \
     project, label_misc
@@ -23,14 +23,14 @@ except ImportError:
 from humaniki_schema.db import session_factory
 
 
-class humanikiDataInserter():
+class HumanikiDataInserter():
     def __init__(self, config, dump_date=None, dump_subset=None, insert_strategy=None):
         self.config = hs_utils.read_config_file(config, __file__)
         self.config_insertion = self.config['insertion']
         self.overwrite = self.config_insertion['overwrite'] if 'overwrite' in self.config_insertion else False
         self.only_files = self.config_insertion['only_files'] if 'only_files' in self.config_insertion else None
         self.insert_strategy = insert_strategy if insert_strategy is not None else "infile"
-        self.dump_date = self._make_dump_date(dump_date) if dump_date else None
+        self.dump_date = hs_utils.make_dump_date_from_str(dump_date) if dump_date else None
         self.dump_subset = dump_subset
         self.dump_date_str = None
         self.fill_id = None
@@ -66,16 +66,13 @@ class humanikiDataInserter():
                  "escaping_options": ""},
         }
 
-    def _make_dump_date(self, datestr):
-        return datetime.datetime.strptime(datestr, '%Y%m%d').date()
-
     def detect_fill_date(self):
         if self.dump_date is not None:
             self.detection_type = 'explicit'
         else:
             dump_dir = self.config_insertion['wdtk_processing_output']
             latest_dir = max(listdir(dump_dir))
-            latest_dt = self._make_dump_date(latest_dir)
+            latest_dt = hs_utils.make_dump_date_from_str(latest_dir)
             self.dump_date = latest_dt
             self.detection_type = 'latest'
         # finally
@@ -98,7 +95,12 @@ class humanikiDataInserter():
 
     def create_fill_item(self):
         try:
-            prev_latest_fill_id, prev_latest_fill_dt = get_latest_fill_id(self.db_session)
+            # if no dump specified try and get the latest
+            if self.dump_date is None:
+                prev_latest_fill_id, prev_latest_fill_dt = get_latest_fill_id(self.db_session)
+            # else if dump is specified see if we need ot overwrite
+            else:
+                prev_latest_fill_id, prev_latest_fill_dt = get_exact_fill_id(self.db_session, self.dump_date)
         except sqlalchemy.orm.exc.NoResultFound: # might happen if its the first time
             previous_fill_id, prev_latest_fill_dt = None, None
 
@@ -240,7 +242,7 @@ if __name__ == '__main__':
     dump_date = sys.argv[1] if len(sys.argv) >= 2 else None
     dump_subset = sys.argv[2] if len(sys.argv) >= 3 else None
     insert_strategy = sys.argv[3] if len(sys.argv) >= 4 else None
-    hdi = humanikiDataInserter(config=os.environ['HUMANIKI_YAML_CONFIG'],
+    hdi = HumanikiDataInserter(config=os.environ['HUMANIKI_YAML_CONFIG'],
                                dump_date=dump_date,
                                dump_subset=dump_subset,
                                insert_strategy=insert_strategy)

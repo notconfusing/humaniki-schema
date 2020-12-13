@@ -172,7 +172,7 @@ def generate_all(config=None, metrics_method='auto'):
         fill_dts = db_session.query(fill.date).all()
         fill_dt_strs = [f[0].strftime('%Y%m%d') for f in fill_dts]
         for fill_dt_str in fill_dt_strs:
-            mf = MetricFactory(os.environ['HUMANIKI_YAML_CONFIG'], fill_dt_str=fill_dt_str)
+            mf = MetricFactory(os.environ['HUMANIKI_YAML_CONFIG'], fill_date=fill_dt_str)
             mf.run()
 
     elif metrics_method != 'auto':
