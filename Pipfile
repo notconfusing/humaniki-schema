@@ -18,6 +18,8 @@ humaniki-schema = {editable = true,version = "*", path = "."}
 pandas = "*"
 pytest = "*"
 pyyaml = "*"
+airbrake = "*"
+concurrentloghandler = "*"
 
 [requires]
 python_version = "3.7"

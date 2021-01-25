@@ -4,6 +4,15 @@ from enum import Enum
 from datetime import datetime, date
 from pathlib import Path
 import yaml
+import logging
+
+logging.basicConfig(filename='../logs/humaniki.log',
+                    filemode='a',
+                    format='%(asctime)s - %(levelname)s - %(message)s',
+                    level=logging.DEBUG)
+
+log = logging.getLogger()
+
 
 WMF_TIMESTAMP_FMT = '%a %b %d %H:%M:%S %z %Y'
 HUMANIKI_SNAPSHOT_DATE_FMT = '%Y%m%d'
@@ -66,7 +75,7 @@ def get_enum_from_str(enum_class, s):
 
 def read_config_file(config_file_name, caller__file__):
     # TODO: this config reader requires you calling it from the a place that is not symlinked
-    # at the .parents mechanism sees not be able to jump those backwards
+    # as the .parents mechanism sees not be able to jump those backwards
     # for instance if you have project/lib/civilservant-core/civilservant/make_experiment.py
     # you cant do cd lib/civilservant-core/civilservant && python make_experiment.py but rather need to do
     # the easier thing of cd project && python lib/civilservant-core/civilservant/make_experiment.py
@@ -82,6 +91,16 @@ def read_config_file(config_file_name, caller__file__):
     # we got to the end without finding a config
     raise FileNotFoundError(config_file_name)
 
+def get_ancestor_directory_that_has_xdir_as_child(xdir, caller__file__):
+    '''Go up from the caller__file__ until xdir is a child of curr dir '''
+    start_dir = os.path.abspath(caller__file__)
+    for i in range(4):
+        ancestor_dir = Path(start_dir).parents[i]
+        if xdir in os.listdir(ancestor_dir):
+            return ancestor_dir
+        else:
+            continue
+    raise FileNotFoundError
 
 def make_dump_date_from_str(datestr):
     if isinstance(datestr, date):
@@ -89,3 +108,15 @@ def make_dump_date_from_str(datestr):
         return datestr
     else:
         return datetime.strptime(datestr, HUMANIKI_SNAPSHOT_DATE_FMT).date()
+
+
+def is_wikimedia_cloud_dump_format(filename):
+    filename_parts = filename.split('.')
+    correct_part_nums = len(filename_parts) ==3
+    if correct_part_nums:
+        part_one_is_date = len(filename_parts[0])==8 and filename_parts[0].isnumeric()
+        part_two_is_json = filename_parts[1] == 'json'
+        part_three_is_gz = filename_parts[2] == 'gz'
+        return part_one_is_date and part_two_is_json and part_three_is_gz
+    else:
+        return False

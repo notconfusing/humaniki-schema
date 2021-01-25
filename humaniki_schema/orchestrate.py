@@ -6,10 +6,12 @@ from humaniki_schema import db
 from humaniki_schema.generate_metrics import MetricFactory
 from humaniki_schema.insert import HumanikiDataInserter
 from humaniki_schema.queries import get_latest_fill_id
-from humaniki_schema.utils import read_config_file, make_dump_date_from_str, HUMANIKI_SNAPSHOT_DATE_FMT
+from humaniki_schema.utils import read_config_file, make_dump_date_from_str, HUMANIKI_SNAPSHOT_DATE_FMT, \
+    is_wikimedia_cloud_dump_format
+from humaniki_schema.log import get_logger
+log = get_logger()
 
-import logging
-log = logging.getLogger('humaniki_log')
+
 
 class HumanikiOrchestrator(object):
     def __init__(self, config):
@@ -21,15 +23,18 @@ class HumanikiOrchestrator(object):
         if self.humaniki_override_date is not None:
             self.working_fill_date = make_dump_date_from_str(self.humaniki_override_date)
         self.metrics_factory = None
+        log.info("Humaniki Orchestrator intialized")
+
     def frontfill_determine_needs_run_from_remote_fill_dt(self):
         """return true if remote date is newer than what we have"""
         if self.working_fill_date is None:
             # that is it wasn't set yet, maybe by override
             latest_local_fill_id, latest_local_fill_date = get_latest_fill_id(self.db_session)
 
-            wd_dir_ls = os.listdir(os.environ['HUMANIKI_DUMP_DIR_UNLINKED'])
-            wd_dir_dts_s = [f for f in wd_dir_ls if len(f)==8 and f.isnumeric()]
-            wd_dir_dts = [make_dump_date_from_str(dt_s) for dt_s in wd_dir_dts_s]
+            wd_dir_ls = os.listdir(os.environ['HUMANIKI_DUMP_DIR'])
+            wd_dir_ls_exists = [os.path.exists(os.readlink(p)) for p in wd_dir_ls]
+            wd_dir_ls_exists_correct = [f for f in wd_dir_ls_exists if is_wikimedia_cloud_dump_format(f)]
+            wd_dir_dts = [make_dump_date_from_str(dt_s.split('.json.gz')[0]) for dt_s in wd_dir_ls_exists_correct]
             remote_later_than_local = [fd for fd in wd_dir_dts if fd > latest_local_fill_date]
 
             if remote_later_than_local:

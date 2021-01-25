@@ -122,3 +122,6 @@ maximilianklein@humaniki:~$ sudo -- sudo -iu humaniki
 - config `location / {
             include proxy_params;
             proxy_pass http://unix:/home/humaniki/humaniki-backend/humaniki.sock;}`
+
+## using sshfs to mock the production env locally
+- `sshfs humaniki-prod:/mnt/nfs/dumps-labstore1007.wikimedia.org/ ~/public`
