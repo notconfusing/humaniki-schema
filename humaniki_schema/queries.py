@@ -290,7 +290,7 @@ def get_project_wikiencoding_from_id(session, internal_project_id=None):
 
 
 def get_latest_fill_id(session):
-    latest_q = session.query(func.max(fill.date)).subquery()
+    latest_q = session.query(func.max(fill.date)).filter(fill.detail['active'] == True).subquery()
     q = session.query(fill.id, fill.date).filter(fill.date == latest_q).filter(fill.detail['active'] == True)
     latest_fill_id, latest_fill_date = q.one()
     return latest_fill_id, latest_fill_date
