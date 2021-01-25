@@ -35,10 +35,12 @@ class HumanikiOrchestrator(object):
                 latest_local_fill_id, latest_local_fill_date = get_latest_fill_id(self.db_session)
             except sqlalchemy.orm.exc.NoResultFound:
                 # in the case this is the very first run
-                latest_local_fill_date = datetime.date(2012,1,1) # when wikidata first started.
+                latest_local_fill_date = datetime(2012,1,1) # when wikidata first started.
 
             wd_dir_ls = os.listdir(os.environ['HUMANIKI_DUMP_DIR'])
-            wd_dir_ls_exists = [os.path.exists(os.readlink(p)) for p in wd_dir_ls]
+            # filter out broken links
+            wd_dir_ls_exists = [p for p in wd_dir_ls if os.path.exists(os.readlink(os.path.join(os.environ['HUMANIKI_DUMP_DIR'], p)))]
+            # make sure the file is like YYYYMMDD.json.gz
             wd_dir_ls_exists_correct = [f for f in wd_dir_ls_exists if is_wikimedia_cloud_dump_format(f)]
             log.info(f'Existing and correct dump files found were {wd_dir_ls_exists_correct}')
             wd_dir_dts = [make_dump_date_from_str(dt_s.split('.json.gz')[0]) for dt_s in wd_dir_ls_exists_correct]
