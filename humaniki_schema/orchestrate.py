@@ -11,8 +11,8 @@ from humaniki_schema.queries import get_latest_fill_id
 from humaniki_schema.utils import read_config_file, make_dump_date_from_str, HUMANIKI_SNAPSHOT_DATE_FMT, \
     is_wikimedia_cloud_dump_format, numeric_part_of_filename
 from humaniki_schema.log import get_logger
-log = get_logger()
 
+log = get_logger()
 
 
 class HumanikiOrchestrator(object):
@@ -35,7 +35,7 @@ class HumanikiOrchestrator(object):
                 latest_local_fill_id, latest_local_fill_date = get_latest_fill_id(self.db_session)
             except sqlalchemy.orm.exc.NoResultFound:
                 # in the case this is the very first run
-                latest_local_fill_date = datetime(2012,1,1) # when wikidata first started.
+                latest_local_fill_date = datetime(2012, 1, 1).date()  # when wikidata first started.
 
             wd_dir_raw = os.listdir(os.environ['HUMANIKI_DUMP_DIR'])
             # filter out broken links
@@ -53,22 +53,23 @@ class HumanikiOrchestrator(object):
                 log.info(f"Lastest local was {latest_local_fill_date}, and {len(wd_dir_dts)} remote dts later")
                 remote_infimum_date = min(remote_later_than_local)
                 self.working_fill_date = remote_infimum_date
-    # select the remote fill date that's earliest but still greater than local
+            # select the remote fill date that's earliest but still greater than local
             else:
-                log.info(f"Lastest local was {latest_local_fill_date}, and nothing later from {len(wd_dir_dts)} remote dts")
+                log.info(
+                    f"Lastest local was {latest_local_fill_date}, and nothing later from {len(wd_dir_dts)} remote dts")
 
     def execute_java(self):
         ## subprocess.run waits for rterun
         ## java and jar
         JAVA_BIN = os.getenv("HUMANIKI_JAVA_BIN")
         JAR = os.getenv("HUMANIKI_JAR")
-        JAVA_TIMEOUT = timedelta(days=1)/timedelta(seconds=1)
-        encoding_arg ='-Dfile.encoding=UTF-8'
+        JAVA_TIMEOUT = timedelta(days=1) / timedelta(seconds=1)
+        encoding_arg = '-Dfile.encoding=UTF-8'
         dash_jar_arg = '-jar'
 
         java_call = [JAVA_BIN, encoding_arg, dash_jar_arg, JAR, self.working_fill_date.strftime('%Y%m%d')]
         log.info(f'java call: {java_call}')
-        java_run_response = subprocess.run(java_call,  timeout=JAVA_TIMEOUT)
+        java_run_response = subprocess.run(java_call, timeout=JAVA_TIMEOUT)
         if isinstance(java_run_response, subprocess.CompletedProcess):
             log.info('Java complete')
         else:
@@ -85,7 +86,8 @@ class HumanikiOrchestrator(object):
 
     def _get_metrics_factory(self):
         if self.metrics_factory is None:
-            self.metrics_factory = MetricFactory(config=os.environ['HUMANIKI_YAML_CONFIG'], fill_date=self.working_fill_date)
+            self.metrics_factory = MetricFactory(config=os.environ['HUMANIKI_YAML_CONFIG'],
+                                                 fill_date=self.working_fill_date)
         else:
             pass
 
@@ -99,7 +101,8 @@ class HumanikiOrchestrator(object):
         target_dir = os.path.join(this_dir, '..')
         target_f = os.path.join(target_dir, METRIC_EXECUTOR_SH)
         bash = 'bash'
-        out_log_f = os.path.join("logs", f"metric_executor_{self.working_fill_date.strftime(HUMANIKI_SNAPSHOT_DATE_FMT)}.log")
+        out_log_f = os.path.join("logs",
+                                 f"metric_executor_{self.working_fill_date.strftime(HUMANIKI_SNAPSHOT_DATE_FMT)}.log")
         out_redirector_symb = '>'
         execute_metric_call = [bash, target_f, out_redirector_symb, out_log_f]
         subprocess.run(execute_metric_call)
@@ -121,6 +124,7 @@ class HumanikiOrchestrator(object):
             self.execute_inserter()
             self.execute_create_metric_jobs()
             self.execute_metric_jobs_multi()
+
 
 if __name__ == '__main__':
     orchestrator = HumanikiOrchestrator(os.environ['HUMANIKI_YAML_CONFIG'])
