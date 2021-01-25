@@ -79,17 +79,10 @@ def read_config_file(config_file_name, caller__file__):
     # for instance if you have project/lib/civilservant-core/civilservant/make_experiment.py
     # you cant do cd lib/civilservant-core/civilservant && python make_experiment.py but rather need to do
     # the easier thing of cd project && python lib/civilservant-core/civilservant/make_experiment.py
-    for i in range(4):
-        try:
-            ancestor_dir = Path(caller__file__).parents[i]
-            config_loc = os.path.join(ancestor_dir, 'config', config_file_name)
-            config = yaml.safe_load(open(config_loc, 'r'))
-            if config:
-                return config
-        except FileNotFoundError:
-            pass
-    # we got to the end without finding a config
-    raise FileNotFoundError(config_file_name)
+    above_conf_dir = get_ancestor_directory_that_has_xdir_as_child('config', caller__file__)
+    config_loc = os.path.join(above_conf_dir, 'config', config_file_name)
+    config = yaml.safe_load(open(config_loc, 'r'))
+    return config
 
 def get_ancestor_directory_that_has_xdir_as_child(xdir, caller__file__):
     '''Go up from the caller__file__ until xdir is a child of curr dir '''
