@@ -2,6 +2,8 @@ import os
 import subprocess
 from datetime import datetime, timedelta
 
+import sqlalchemy
+
 from humaniki_schema import db
 from humaniki_schema.generate_metrics import MetricFactory
 from humaniki_schema.insert import HumanikiDataInserter
@@ -29,7 +31,11 @@ class HumanikiOrchestrator(object):
         """return true if remote date is newer than what we have"""
         if self.working_fill_date is None:
             # that is it wasn't set yet, maybe by override
-            latest_local_fill_id, latest_local_fill_date = get_latest_fill_id(self.db_session)
+            try:
+                latest_local_fill_id, latest_local_fill_date = get_latest_fill_id(self.db_session)
+            except sqlalchemy.orm.exc.NoResultFound:
+                # in the case this is the very first run
+                latest_local_fill_date = datetime.date(2012,1,1) # when wikidata first started.
 
             wd_dir_ls = os.listdir(os.environ['HUMANIKI_DUMP_DIR'])
             wd_dir_ls_exists = [os.path.exists(os.readlink(p)) for p in wd_dir_ls]
