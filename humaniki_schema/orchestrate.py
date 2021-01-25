@@ -25,6 +25,7 @@ class HumanikiOrchestrator(object):
         if self.humaniki_override_date is not None:
             self.working_fill_date = make_dump_date_from_str(self.humaniki_override_date)
         self.metrics_factory = None
+        self.num_procs = os.getenv("HUMANIKI_NUM_PROCS", 4)
         log.info("Humaniki Orchestrator intialized")
 
     def frontfill_determine_needs_run_from_remote_fill_dt(self):
@@ -103,7 +104,7 @@ class HumanikiOrchestrator(object):
         bash = 'bash'
         out_log_f = os.path.join("logs",
                                  f"metric_executor_{self.working_fill_date.strftime(HUMANIKI_SNAPSHOT_DATE_FMT)}.log")
-        num_threads = '4'
+        num_threads = self.num_procs
         dump_dt = self.working_fill_date.strftime(HUMANIKI_SNAPSHOT_DATE_FMT)
         out_redirector_symb = '>'
         execute_metric_call = [bash, target_f, num_threads, dump_dt, out_redirector_symb, out_log_f]
