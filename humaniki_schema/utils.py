@@ -4,14 +4,6 @@ from enum import Enum
 from datetime import datetime, date
 from pathlib import Path
 import yaml
-import logging
-
-logging.basicConfig(filename='../logs/humaniki.log',
-                    filemode='a',
-                    format='%(asctime)s - %(levelname)s - %(message)s',
-                    level=logging.DEBUG)
-
-log = logging.getLogger()
 
 
 WMF_TIMESTAMP_FMT = '%a %b %d %H:%M:%S %z %Y'
@@ -103,13 +95,24 @@ def make_dump_date_from_str(datestr):
         return datetime.strptime(datestr, HUMANIKI_SNAPSHOT_DATE_FMT).date()
 
 
-def is_wikimedia_cloud_dump_format(filename):
+def is_wikimedia_cloud_dump_format(path_filename):
+    filename = os.path.basename(path_filename)
     filename_parts = filename.split('.')
     correct_part_nums = len(filename_parts) ==3
     if correct_part_nums:
-        part_one_is_date = len(filename_parts[0])==8 and filename_parts[0].isnumeric()
+        # part_one_is_date = len(filename_parts[0])==8 and filename_parts[0].isnumeric()
+        numeric_part = numeric_part_of_filename(filename)
+        part_one_is_date = len(numeric_part)==8 and numeric_part.isnumeric()
         part_two_is_json = filename_parts[1] == 'json'
         part_three_is_gz = filename_parts[2] == 'gz'
         return part_one_is_date and part_two_is_json and part_three_is_gz
     else:
         return False
+
+def numeric_part_of_filename(filename, fformat='dashed', basenameittoo=False):
+    filename = os.path.basename(filename) if basenameittoo else filename
+    if fformat=='dashed':
+        # something like wikidata-YYYYMMDD-all.json.gz
+        without_extensions = filename.split('.')[0]
+        dash_parts = without_extensions.split('-')
+        return dash_parts[1]

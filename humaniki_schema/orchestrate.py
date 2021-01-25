@@ -9,7 +9,7 @@ from humaniki_schema.generate_metrics import MetricFactory
 from humaniki_schema.insert import HumanikiDataInserter
 from humaniki_schema.queries import get_latest_fill_id
 from humaniki_schema.utils import read_config_file, make_dump_date_from_str, HUMANIKI_SNAPSHOT_DATE_FMT, \
-    is_wikimedia_cloud_dump_format
+    is_wikimedia_cloud_dump_format, numeric_part_of_filename
 from humaniki_schema.log import get_logger
 log = get_logger()
 
@@ -37,13 +37,16 @@ class HumanikiOrchestrator(object):
                 # in the case this is the very first run
                 latest_local_fill_date = datetime(2012,1,1) # when wikidata first started.
 
-            wd_dir_ls = os.listdir(os.environ['HUMANIKI_DUMP_DIR'])
+            wd_dir_raw = os.listdir(os.environ['HUMANIKI_DUMP_DIR'])
             # filter out broken links
-            wd_dir_ls_exists = [p for p in wd_dir_ls if os.path.exists(os.readlink(os.path.join(os.environ['HUMANIKI_DUMP_DIR'], p)))]
+            wd_dir_ls = [os.path.join(os.environ['HUMANIKI_DUMP_DIR'], p) for p in wd_dir_raw]
+            wd_dir_ls_links = [os.path.join(os.environ['HUMANIKI_DUMP_DIR'], os.readlink(l)) for l in wd_dir_ls]
+            wd_dir_ls_exists = [f for f in wd_dir_ls_links if os.path.exists(f)]
             # make sure the file is like YYYYMMDD.json.gz
             wd_dir_ls_exists_correct = [f for f in wd_dir_ls_exists if is_wikimedia_cloud_dump_format(f)]
             log.info(f'Existing and correct dump files found were {wd_dir_ls_exists_correct}')
-            wd_dir_dts = [make_dump_date_from_str(dt_s.split('.json.gz')[0]) for dt_s in wd_dir_ls_exists_correct]
+            wd_dir_dts = [make_dump_date_from_str(numeric_part_of_filename(dt_s, basenameittoo=True))
+                          for dt_s in wd_dir_ls_exists_correct]
             remote_later_than_local = [fd for fd in wd_dir_dts if fd > latest_local_fill_date]
 
             if remote_later_than_local:
