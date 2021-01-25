@@ -34,6 +34,7 @@ class HumanikiOrchestrator(object):
             wd_dir_ls = os.listdir(os.environ['HUMANIKI_DUMP_DIR'])
             wd_dir_ls_exists = [os.path.exists(os.readlink(p)) for p in wd_dir_ls]
             wd_dir_ls_exists_correct = [f for f in wd_dir_ls_exists if is_wikimedia_cloud_dump_format(f)]
+            log.info(f'Existing and correct dump files found were {wd_dir_ls_exists_correct}')
             wd_dir_dts = [make_dump_date_from_str(dt_s.split('.json.gz')[0]) for dt_s in wd_dir_ls_exists_correct]
             remote_later_than_local = [fd for fd in wd_dir_dts if fd > latest_local_fill_date]
 
@@ -55,7 +56,6 @@ class HumanikiOrchestrator(object):
         dash_jar_arg = '-jar'
 
         java_call = [JAVA_BIN, encoding_arg, dash_jar_arg, JAR, self.working_fill_date.strftime('%Y%m%d')]
-        print(f'java call: {java_call}')
         log.info(f'java call: {java_call}')
         java_run_response = subprocess.run(java_call,  timeout=JAVA_TIMEOUT)
         if isinstance(java_run_response, subprocess.CompletedProcess):
@@ -96,8 +96,10 @@ class HumanikiOrchestrator(object):
     def run(self):
         # determine if need run
         if self.frontfill_backfill == 'front':
+            log.info("Fill direction is frontfill")
             self.frontfill_determine_needs_run_from_remote_fill_dt()
         elif self.frontfill_backfill == 'back':
+            log.info("Fill direction is backfill")
             raise NotImplementedError
         else:
             raise AssertionError("need a front or backfill")
