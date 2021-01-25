@@ -18,8 +18,9 @@ from humaniki_schema.db import session_factory
 from humaniki_schema.schema import human, human_sitelink, human_country, human_occupation, metric, job
 from humaniki_schema.utils import Properties, PopulationDefinition, get_enum_from_str, read_config_file, \
     make_dump_date_from_str, JobType, JobState
+from humaniki_schema.log import get_logger
 
-import logging
+log = get_logger()
 
 
 class MetricFactory():
@@ -64,11 +65,11 @@ class MetricFactory():
         for comb_len in range(len(all_dimensions) + 1):  # +1 because zero indexed
             # check if max combination length is set and if we are passed it
             if max_comb_len is not None and comb_len > max_comb_len:
-                print(f'Not configured to generate combinations greater than {max_comb_len}')
+                log.info(f'Not configured to generate combinations greater than {max_comb_len}')
                 continue
             else:
                 r_len_combs = list(combinations(all_dimensions, r=comb_len))
-                print(f'{len(r_len_combs)} of length {comb_len}')
+                log.info(f'{len(r_len_combs)} of length {comb_len}')
                 dimension_combinations.extend(r_len_combs)
 
         # second product the dimension combinations with the population definitions
@@ -79,7 +80,7 @@ class MetricFactory():
 
         num_dim_combs = len(dimension_combinations)
         num_pop_defns = len(all_pop_defns)
-        print(f'{len(dim_pop_combs)}==?{num_dim_combs} * {num_pop_defns}')
+        log.info(f'{len(dim_pop_combs)}==?{num_dim_combs} * {num_pop_defns}')
         self.metric_combinations = dim_pop_combs
 
     def _get_metric_comb_as_job(self, metric_combination):
@@ -120,17 +121,17 @@ class MetricFactory():
         for metric_combination in self.metric_combinations:
             job_or_none = self._get_metric_comb_as_job(metric_combination)
             if job_or_none is not None:
-                print(f'Job already exists: {metric_combination}')
+                log.info(f'Job already exists: {metric_combination}')
             else:
                 self._persist_metric_combination_as_job(metric_combination)
-                print(f'Job added: {metric_combination}')
+                log.info(f'Job added: {metric_combination}')
 
     def _get_uncompleted_metric_create_jobs(self):
         # check the number of inprogress as a safe guard
         in_progress_job_count = self.db_session.query(job).filter(and_(job.job_type == JobType.METRIC_CREATE.value,
                                                                        job.job_state == JobState.IN_PROGRESS.value
                                                                        )).count()
-        print(f'In progress jobs: {in_progress_job_count}')
+        log.info(f'In progress jobs: {in_progress_job_count}')
 
         uncompleted_job_states = (JobState.UNATTEMPTED.value,
                                   JobState.NEEDS_RETRY.value)
@@ -141,7 +142,7 @@ class MetricFactory():
 
         uncompleted_jobs_count = uncompleted_jobs_q.count()
         uncompleted_jobs_first = uncompleted_jobs_q.first()
-        print(f'There are {uncompleted_jobs_count} uncompleted jobs')
+        log.info(f'There are {uncompleted_jobs_count} uncompleted jobs')
         self.metric_job = uncompleted_jobs_first
 
 
@@ -155,9 +156,9 @@ class MetricFactory():
                                db_session=session_factory()
                                )
             self.metric_creator = mc
-            print(f"hydrate metric creator")
+            log.info(f"hydrate metric creator")
         else:
-            print(f'No metrics creator to hydrate')
+            log.info(f'No metrics creator to hydrate')
             sys.exit(29) #special signal to calling bash.
 
     def _run_metric_creators(self):
@@ -173,11 +174,11 @@ class MetricFactory():
 
         try:
             # complete action
-            print(f"Running: {self.metric_creator}")
+            log.info(f"Running: {self.metric_creator}")
             self.metric_creator.run()
             self.metric_job.job_state = JobState.COMPLETE.value
         except Exception as e:
-            print(f'Encountered {e}')
+            log.info(f'Encountered {e}')
             next_error = {str(datetime.datetime.utcnow()):repr(e)}
             total_errors = previous_errors + [next_error]
             self.db_session.rollback()
@@ -200,7 +201,7 @@ class MetricFactory():
         self._generate_metric_combinations()
         self._persist_metric_combinations_as_jobs()
         metric_run_end = time.time()
-        print(f'Metric Factory creation took {metric_run_end - metric_run_start} seconds')
+        log.info(f'Metric Factory creation took {metric_run_end - metric_run_start} seconds')
 
     def execute(self):
         metric_run_start = time.time()
@@ -208,7 +209,7 @@ class MetricFactory():
         self._create_metric_creators()
         self._run_metric_creators()
         metric_run_end = time.time()
-        print(f'Metric Factory execute took {metric_run_end - metric_run_start} seconds')
+        log.info(f'Metric Factory execute took {metric_run_end - metric_run_start} seconds')
 
 
 class MetricCreator():
@@ -335,7 +336,7 @@ class MetricCreator():
             self.db_session.commit()
         except sqlalchemy.exc.IntegrityError as insert_error:
             if insert_error.orig.args[1].startswith('Duplicate entry'):
-                print('attempting to add a metric thats already been added')
+                log.info('attempting to add a metric thats already been added')
                 pass
             else:
                 raise insert_error
@@ -349,7 +350,7 @@ class MetricCreator():
         #             self.db_session.add(insert_metric)
         #         except sqlalchemy.exc.IntegrityError as ie:
         #             if ie.code == 1062: # duplicate
-        #                 print(f'duplicate error on {insert_metric}')
+        #                 log.info(f'duplicate error on {insert_metric}')
         #             else:
         #                 self.db_session.rollback()
         #                 raise
@@ -359,7 +360,7 @@ class MetricCreator():
         # these remain static
         for row_i, row in enumerate(self.metric_res):
             if row_i % 1000 == 0:
-                print(row_i)
+                log.info(row_i)
                 save_try_count = 0
                 while -1 < save_try_count < 3:
                     save_try_count += 1
@@ -386,7 +387,7 @@ class MetricCreator():
                 agg_vals_id = self.aggregation_getter.lookup(bias_value=bias_value,
                                                              dimension_values=dimension_values)
             except NoSuchWikiError:
-                print(f'skipping something that dimension values {dimension_values}')
+                log.info(f'skipping something that dimension values {dimension_values}')
                 continue  # if there's a new wiki, we won't count it
             a_metric = metric(fill_id=self.fill_id,
                               population_id=self.population_definition.value,
@@ -411,13 +412,13 @@ class MetricCreator():
 if __name__ == '__main__':
     create_execute = sys.argv[1] if len(sys.argv) >= 2 else None
     dump_date = sys.argv[2] if len(sys.argv) >= 3 else None
-    print(f'Specified dump date: {dump_date}')
+    log.info(f'Specified dump date: {dump_date}')
     mf = MetricFactory(config=os.environ['HUMANIKI_YAML_CONFIG'], fill_date=dump_date)
     if create_execute:
-        print(f"Attempting to run {create_execute} on metrics factory")
+        log.info(f"Attempting to run {create_execute} on metrics factory")
         getattr(mf, create_execute)()
 
-    print("Generate metrics---DONE")
+    log.info("Generate metrics---DONE")
     # in the future metricfactor should fan this out to metriccreator via the config
     # mc = MetricCreator(population_definition=PopulationDefinition.GTE_ONE_SITELINK,
     #                    bias_property=Properties.GENDER,
@@ -432,4 +433,4 @@ if __name__ == '__main__':
     #                    thresholds=None,
     #                    db_session=mf.db_session)
     # mc.run()
-    # print(f'Len of metric res is {len(mc.metric_res)}')
+    # log.info(f'Len of metric res is {len(mc.metric_res)}')

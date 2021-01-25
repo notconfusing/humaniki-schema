@@ -67,8 +67,8 @@ class HumanikiOrchestrator(object):
         encoding_arg = '-Dfile.encoding=UTF-8'
         dash_jar_arg = '-jar'
 
-        java_call = [JAVA_BIN, encoding_arg, dash_jar_arg, JAR, self.working_fill_date.strftime('%Y%m%d')]
-        log.info(f'java call: {java_call}')
+        java_call = [JAVA_BIN, encoding_arg, dash_jar_arg, JAR, self.working_fill_date.strftime(HUMANIKI_SNAPSHOT_DATE_FMT)]
+        log.info(f'java call: {" ".join(java_call)}')
         java_run_response = subprocess.run(java_call, timeout=JAVA_TIMEOUT)
         if isinstance(java_run_response, subprocess.CompletedProcess):
             log.info('Java complete')
@@ -103,8 +103,11 @@ class HumanikiOrchestrator(object):
         bash = 'bash'
         out_log_f = os.path.join("logs",
                                  f"metric_executor_{self.working_fill_date.strftime(HUMANIKI_SNAPSHOT_DATE_FMT)}.log")
+        num_threads = '4'
+        dump_dt = self.working_fill_date.strftime(HUMANIKI_SNAPSHOT_DATE_FMT)
         out_redirector_symb = '>'
-        execute_metric_call = [bash, target_f, out_redirector_symb, out_log_f]
+        execute_metric_call = [bash, target_f, num_threads, dump_dt, out_redirector_symb, out_log_f]
+        log.info(f'Execute metric call is: {" ".join(execute_metric_call)}')
         subprocess.run(execute_metric_call)
 
     def run(self):
