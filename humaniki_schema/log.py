@@ -10,8 +10,10 @@ from humaniki_schema.utils import get_ancestor_directory_that_has_xdir_as_child
 def get_logger(ENV=None, BASE_DIR=None):
     if ENV is None:
         ENV = os.getenv('HUMANIKI_ENV', 'development')
-    if BASE_DIR is None:
-        BASE_DIR = get_ancestor_directory_that_has_xdir_as_child(xdir='logs', caller__file__=__file__)
+
+    search_from = BASE_DIR if BASE_DIR else __file__
+    BASE_DIR = get_ancestor_directory_that_has_xdir_as_child(xdir='logs', caller__file__=search_from)
+
     # use Airbrake in production
     if ENV == "production":
         log = airbrake.getLogger()

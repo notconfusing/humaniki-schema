@@ -13,6 +13,8 @@ from humaniki_schema.schema import fill, human, human_country, human_occupation,
     metric, metric_properties_j, metric_properties_n, metric_aggregations_j, metric_aggregations_n, metric_coverage, \
     project, label_misc
 import humaniki_schema.utils as hs_utils
+from humaniki_schema.log import get_logger
+log = get_logger()
 
 try:
     import pandas as pd
@@ -88,7 +90,7 @@ class HumanikiDataInserter():
         self.csvs = []
         for csv in extant_csvs:
             if csv not in allowable_csvs:
-                print(f'Not an allowable CSV: {csv}')
+                log.info(f'Not an allowable CSV: {csv}')
             else:
                 self.csvs.append(csv)
         assert len(self.csvs) == len(allowable_csvs)
@@ -106,7 +108,7 @@ class HumanikiDataInserter():
 
         # Deal with an existing dump
         if prev_latest_fill_dt and  prev_latest_fill_dt == self.dump_date:
-            print(f'previous fill item found for {self.dump_date}')
+            log.info(f'previous fill item found for {self.dump_date}')
             if not self.overwrite:
                 raise AssertionError(f'already have a dump of this date, and overwrite is {self.overwrite}')
             else:
@@ -133,18 +135,18 @@ class HumanikiDataInserter():
             self.db_session.bulk_save_objects(rows)
             # except sqlalchemy.exc.IntegrityError as insert_error:
             #     if insert_error.orig.args[1].startswith('Duplicate entry'):
-            #         print('attempting to add a metric thats already been added')
+            #         log.info('attempting to add a metric thats already been added')
             #         self.db_session.rollback()
-            print(f'bulk persisted {len(rows)} rows')
+            log.info(f'bulk persisted {len(rows)} rows')
             self.db_session.commit()
         else:
             self.db_session.add_all(rows)
             self.db_session.commit()
-            print(f'standard persisted {len(rows)} rows')
+            log.info(f'standard persisted {len(rows)} rows')
         return rows
 
     def _insert_csv(self, table_f, extra_const_cols, schema_table, columns):
-        print(f'now processing {table_f}')
+        log.info(f'now processing {table_f}')
         insert_rows = []
         try:
             table_df = pd.read_csv(table_f, sep=',', header=None, index_col=False, na_values=r'\N')
@@ -166,7 +168,7 @@ class HumanikiDataInserter():
                 row_params[col] = val
             a_row = schema_table(**row_params)
             insert_rows.append(a_row)
-        print(f'there are {len(insert_rows)} rows to insert for {schema_table}')
+        log.info(f'there are {len(insert_rows)} rows to insert for {schema_table}')
         return insert_rows
 
     def insert_csvs_pandas(self):
@@ -179,7 +181,7 @@ class HumanikiDataInserter():
 
             # skip this file by filename
             if self.only_files is not None and csv_table_name not in self.only_files:
-                print(f'Only_files acvtive, so skipping {csv_table_name}')
+                log.info(f'Only_files acvtive, so skipping {csv_table_name}')
                 continue
             insert_create_row_objs_start = time.time()
             insert_rows = self._insert_csv(table_f=csv_f,
@@ -189,9 +191,9 @@ class HumanikiDataInserter():
             insert_persist_row_objs_start = time.time()
             self._persist_rows(insert_rows)
             insert_persist_row_objs_end = time.time()
-            print(
+            log.info(
                 f'INSERT, creating row objects took: {insert_persist_row_objs_start-insert_create_row_objs_start} seconds')
-            print(
+            log.info(
                 f'INSERT, persisting row objects took: {insert_persist_row_objs_end-insert_persist_row_objs_start} seconds')
 
     def execute_single_infile(self, csv_f, csv_table_name, column_insertion_order, extra_const_cols, escaping_options):
@@ -204,7 +206,7 @@ class HumanikiDataInserter():
                 ({column_list_str})
                 set fill_id={self.fill_id} {extra_const_str};
         """
-        print(infile_sql)
+        log.info(infile_sql)
         self.db_session.get_bind().execute(infile_sql)
 
     def insert_csvs_infile(self):
@@ -218,7 +220,7 @@ class HumanikiDataInserter():
             self.execute_single_infile(csv_f, csv_table_name, column_insertion_order, extra_const_cols,
                                        escaping_options)
             insert_end = time.time()
-            print(f'Inserting {csv_table_name} took {insert_end-insert_start} seconds')
+            log.info(f'Inserting {csv_table_name} took {insert_end-insert_start} seconds')
 
     def validate(self):
         pass
@@ -236,7 +238,7 @@ class HumanikiDataInserter():
             raise ValueError("No valid insertion strategy provided")
         self.validate()
         run_end = time.time()
-        print(f'Running took {run_end-run_start}')
+        log.info(f'Running took {run_end-run_start}')
 
 if __name__ == '__main__':
     dump_date = sys.argv[1] if len(sys.argv) >= 2 else None
