@@ -45,6 +45,8 @@ class MetricFactory():
         self.metric_combinations = None
         self.metric_creator = None
         self.metric_job = None
+        self.pid = os.getpid()
+
     def _generate_metric_combinations(self):
         try:
             combination_config = self.config_generation['combination']
@@ -65,11 +67,11 @@ class MetricFactory():
         for comb_len in range(len(all_dimensions) + 1):  # +1 because zero indexed
             # check if max combination length is set and if we are passed it
             if max_comb_len is not None and comb_len > max_comb_len:
-                log.info(f'Not configured to generate combinations greater than {max_comb_len}')
+                log.info(f'PID:{self.pid} Not configured to generate combinations greater than {max_comb_len}')
                 continue
             else:
                 r_len_combs = list(combinations(all_dimensions, r=comb_len))
-                log.info(f'{len(r_len_combs)} of length {comb_len}')
+                log.info(f'PID:{self.pid} {len(r_len_combs)} of length {comb_len}')
                 dimension_combinations.extend(r_len_combs)
 
         # second product the dimension combinations with the population definitions
@@ -80,7 +82,7 @@ class MetricFactory():
 
         num_dim_combs = len(dimension_combinations)
         num_pop_defns = len(all_pop_defns)
-        log.info(f'{len(dim_pop_combs)}==?{num_dim_combs} * {num_pop_defns}')
+        log.info(f'PID:{self.pid} {len(dim_pop_combs)}==?{num_dim_combs} * {num_pop_defns}')
         self.metric_combinations = dim_pop_combs
 
     def _get_metric_comb_as_job(self, metric_combination):
@@ -121,17 +123,17 @@ class MetricFactory():
         for metric_combination in self.metric_combinations:
             job_or_none = self._get_metric_comb_as_job(metric_combination)
             if job_or_none is not None:
-                log.info(f'Job already exists: {metric_combination}')
+                log.info(f'PID:{self.pid} Job already exists: {metric_combination}')
             else:
                 self._persist_metric_combination_as_job(metric_combination)
-                log.info(f'Job added: {metric_combination}')
+                log.info(f'PID:{self.pid} Job added: {metric_combination}')
 
     def _get_uncompleted_metric_create_jobs(self):
         # check the number of inprogress as a safe guard
         in_progress_job_count = self.db_session.query(job).filter(and_(job.job_type == JobType.METRIC_CREATE.value,
                                                                        job.job_state == JobState.IN_PROGRESS.value
                                                                        )).count()
-        log.info(f'In progress jobs: {in_progress_job_count}')
+        log.info(f'PID:{self.pid} In progress jobs: {in_progress_job_count}')
 
         uncompleted_job_states = (JobState.UNATTEMPTED.value,
                                   JobState.NEEDS_RETRY.value)
@@ -142,7 +144,7 @@ class MetricFactory():
 
         uncompleted_jobs_count = uncompleted_jobs_q.count()
         uncompleted_jobs_first = uncompleted_jobs_q.first()
-        log.info(f'There are {uncompleted_jobs_count} uncompleted jobs')
+        log.info(f'PID:{self.pid} There are {uncompleted_jobs_count} uncompleted jobs')
         self.metric_job = uncompleted_jobs_first
 
 
@@ -158,7 +160,7 @@ class MetricFactory():
             self.metric_creator = mc
             log.info(f"hydrate metric creator")
         else:
-            log.info(f'No metrics creator to hydrate')
+            log.info(f'PID:{self.pid} No metrics creator to hydrate')
             sys.exit(29) #special signal to calling bash.
 
     def _run_metric_creators(self):
@@ -178,7 +180,7 @@ class MetricFactory():
             self.metric_creator.run()
             self.metric_job.job_state = JobState.COMPLETE.value
         except Exception as e:
-            log.info(f'Encountered {e}')
+            log.info(f'PID:{self.pid} Encountered {e}')
             next_error = {str(datetime.datetime.utcnow()):repr(e)}
             total_errors = previous_errors + [next_error]
             self.db_session.rollback()
@@ -201,7 +203,7 @@ class MetricFactory():
         self._generate_metric_combinations()
         self._persist_metric_combinations_as_jobs()
         metric_run_end = time.time()
-        log.info(f'Metric Factory creation took {metric_run_end - metric_run_start} seconds')
+        log.info(f'PID:{self.pid} Metric Factory creation took {metric_run_end - metric_run_start} seconds')
 
     def execute(self):
         metric_run_start = time.time()
@@ -209,7 +211,7 @@ class MetricFactory():
         self._create_metric_creators()
         self._run_metric_creators()
         metric_run_end = time.time()
-        log.info(f'Metric Factory execute took {metric_run_end - metric_run_start} seconds')
+        log.info(f'PID:{self.pid} Metric Factory execute took {metric_run_end - metric_run_start} seconds')
 
 
 class MetricCreator():
@@ -350,7 +352,7 @@ class MetricCreator():
         #             self.db_session.add(insert_metric)
         #         except sqlalchemy.exc.IntegrityError as ie:
         #             if ie.code == 1062: # duplicate
-        #                 log.info(f'duplicate error on {insert_metric}')
+        #                 log.info(f'PID:{self.pid} duplicate error on {insert_metric}')
         #             else:
         #                 self.db_session.rollback()
         #                 raise
@@ -387,7 +389,7 @@ class MetricCreator():
                 agg_vals_id = self.aggregation_getter.lookup(bias_value=bias_value,
                                                              dimension_values=dimension_values)
             except NoSuchWikiError:
-                log.info(f'skipping something that dimension values {dimension_values}')
+                log.info(f'PID:{self.pid} skipping something that dimension values {dimension_values}')
                 continue  # if there's a new wiki, we won't count it
             a_metric = metric(fill_id=self.fill_id,
                               population_id=self.population_definition.value,
@@ -412,7 +414,8 @@ class MetricCreator():
 if __name__ == '__main__':
     create_execute = sys.argv[1] if len(sys.argv) >= 2 else None
     dump_date = sys.argv[2] if len(sys.argv) >= 3 else None
-    log.info(f'Specified dump date: {dump_date}')
+    this_pid = os.getpid()
+    log.info(f'PID:{this_pid} Specified dump date: {dump_date}. Create or execute is: {create_execute}')
     mf = MetricFactory(config=os.environ['HUMANIKI_YAML_CONFIG'], fill_date=dump_date)
     if create_execute:
         log.info(f"Attempting to run {create_execute} on metrics factory")
@@ -433,4 +436,4 @@ if __name__ == '__main__':
     #                    thresholds=None,
     #                    db_session=mf.db_session)
     # mc.run()
-    # log.info(f'Len of metric res is {len(mc.metric_res)}')
+    # log.info(f'PID:{self.pid} Len of metric res is {len(mc.metric_res)}')
