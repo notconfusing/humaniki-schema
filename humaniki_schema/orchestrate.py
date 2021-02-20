@@ -7,7 +7,8 @@ import sqlalchemy
 from humaniki_schema import db
 from humaniki_schema.generate_metrics import MetricFactory
 from humaniki_schema.insert import HumanikiDataInserter
-from humaniki_schema.queries import get_latest_fill_id, determine_fill_item, create_new_fill, update_fill_detail
+from humaniki_schema.queries import get_latest_fill_id, determine_fill_item, create_new_fill, update_fill_detail, \
+    get_exact_fill
 from humaniki_schema.utils import read_config_file, make_dump_date_from_str, HUMANIKI_SNAPSHOT_DATE_FMT, \
     is_wikimedia_cloud_dump_format, numeric_part_of_filename
 from humaniki_schema.log import get_logger
@@ -30,6 +31,15 @@ class HumanikiOrchestrator(object):
         self.num_procs = os.getenv("HUMANIKI_NUM_PROCS", 4)
         self.fill_id = None
         log.info("Humaniki Orchestrator intialized")
+
+    def _record_stage_on_fill_item(fun):
+        def recorder(self):
+            stages = get_exact_fill(self.db_session, self.working_fill_date).detail['stages']
+            stage_name = fun.__name__
+            stages[stage_name] = True
+            update_fill_detail(self.db_session, self.fill_id, 'stages', stages)
+            fun(self)
+        return recorder
 
     def frontfill_determine_needs_run_from_remote_fill_dt(self):
         """return true if remote date is newer than what we have"""
@@ -62,6 +72,7 @@ class HumanikiOrchestrator(object):
                 log.info(
                     f"Lastest local was {latest_local_fill_date}, and nothing later from {len(wd_dir_dts)} remote dts")
 
+    @_record_stage_on_fill_item
     def execute_java(self):
         ## subprocess.run waits for rterun
         ## java and jar
@@ -135,6 +146,7 @@ class HumanikiOrchestrator(object):
         if create_a_fill:
             a_fill = create_new_fill(self.db_session, self.working_fill_date, detection_type)
             self.fill_id = a_fill.id
+
 
     def run(self):
         # determine if need run

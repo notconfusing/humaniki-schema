@@ -315,7 +315,7 @@ def create_new_fill(session, dump_date, detection_type=None):
     detail = {'fill_process_dt': now.strftime(hs_utils.HUMANIKI_SNAPSHOT_DATE_FMT),
               'active': True,
               'detection_type': detection_type,
-              'stages': [],
+              'stages': {},
               }
     a_fill = fill(date=dump_date, type=fill_type, detail=detail)
     session.add(a_fill)
