@@ -8,7 +8,8 @@ from os import listdir
 
 from sqlalchemy.orm.attributes import flag_modified
 import humaniki_schema
-from humaniki_schema.queries import get_latest_fill_id, get_exact_fill_id
+from humaniki_schema.queries import get_latest_fill_id, get_exact_fill_id, create_new_fill, \
+    update_fill_detail, get_exact_fill, determine_fill_item
 from humaniki_schema.schema import fill, human, human_country, human_occupation, human_property, human_sitelink, label, \
     metric, metric_properties_j, metric_properties_n, metric_aggregations_j, metric_aggregations_n, metric_coverage, \
     project, label_misc
@@ -95,40 +96,33 @@ class HumanikiDataInserter():
                 self.csvs.append(csv)
         assert len(self.csvs) == len(allowable_csvs)
 
+
     def create_fill_item(self):
-        try:
-            # if no dump specified try and get the latest
-            if self.dump_date is None:
-                prev_latest_fill_id, prev_latest_fill_dt = get_latest_fill_id(self.db_session)
-            # else if dump is specified see if we need ot overwrite
-            else:
-                prev_latest_fill_id, prev_latest_fill_dt = get_exact_fill_id(self.db_session, self.dump_date)
-        except sqlalchemy.orm.exc.NoResultFound: # might happen if its the first time
-            previous_fill_id, prev_latest_fill_dt = None, None
+        prev_latest_fill_id, prev_latest_fill_dt = determine_fill_item(self.db_session, self.dump_date)
 
-        # Deal with an existing dump
-        if prev_latest_fill_dt and  prev_latest_fill_dt == self.dump_date:
-            log.info(f'previous fill item found for {self.dump_date}')
-            if not self.overwrite:
-                raise AssertionError(f'already have a dump of this date, and overwrite is {self.overwrite}')
-            else:
-                old_fill = self.db_session.query(fill).filter(fill.date == self.dump_date).filter(
-                    fill.detail['active'] == True).one()
-                old_fill.detail['active'] = False
-                flag_modified(old_fill, "detail")
-                self.db_session.add(old_fill, )
-                self.db_session.commit()
+        # Deal with an existing dump.
+        if prev_latest_fill_dt and prev_latest_fill_dt == self.dump_date:
+            a_fill = get_exact_fill(self.db_session, prev_latest_fill_dt)
+            csvs_in_detail = 'extant_csvs' in a_fill.detail
 
-        # nothing exists yet
-        fill_type = hs_utils.FillType.DUMP.value
-        now = datetime.datetime.utcnow()
-        detail = {'fill_process_dt': now.strftime(hs_utils.HUMANIKI_SNAPSHOT_DATE_FMT),
-                  'detection_type': self.detection_type,
-                  'extant_csvs': self.csvs, 'active': True}
-        a_fill = fill(date=self.dump_date, type=fill_type, detail=detail)
-        self.db_session.add(a_fill)
-        self.db_session.commit()
-        self.fill_id = a_fill.id
+            # overwrite if set, unless we have no record of ever adding the csvs
+            if self.overwrite and not csvs_in_detail:
+                # mark as inactive create new
+                log.info(f'previous fill item found for {self.dump_date} and overwriting')
+                update_fill_detail(self.db_session, prev_latest_fill_id, 'active', False)
+                new_fill = create_new_fill(self.db_session, self.dump_date, detection_type=self.detection_type)
+                self.fill_id = new_fill.id
+            else:
+                self.fill_id = a_fill.id
+
+        # Or no fill exists exists yet
+        else:
+            log.info(f'no previous fill item found for {self.dump_date} and creating new')
+            new_fill = create_new_fill(self.db_session, self.dump_date, detection_type=self.detection_type)
+            self.fill_id = new_fill.id
+
+        # finally
+        update_fill_detail(self.db_session, self.fill_id, 'extant_csvs', self.csvs)
 
     def _persist_rows(self, rows, method='bulk'):
         if method == 'bulk':

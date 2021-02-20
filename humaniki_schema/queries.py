@@ -1,7 +1,10 @@
+import datetime
+
 import sqlalchemy
 
 from sqlalchemy import func, and_
 from sqlalchemy.orm import aliased
+from sqlalchemy.orm.attributes import flag_modified
 
 from humaniki_schema import utils as hs_utils
 from humaniki_schema.schema import fill, metric_properties_j, metric_properties_n, metric_aggregations_j, \
@@ -297,16 +300,53 @@ def get_latest_fill_id(session):
 
 
 def get_exact_fill_id(session, exact_fill_dt):
-    q = session.query(fill.id, fill.date).filter(fill.date == exact_fill_dt).filter(fill.detail['active'] == True)
-    fill_id, fill_date = q.one()
-    return fill_id, fill_date
+    a_fill = get_exact_fill(session, exact_fill_dt)
+    return a_fill.id, a_fill.date
 
+
+def get_exact_fill(session, exact_fill_dt):
+    q = session.query(fill).filter(fill.date == exact_fill_dt).filter(fill.detail['active'] == True)
+    return q.one()
+
+
+def create_new_fill(session, dump_date, detection_type=None):
+    fill_type = hs_utils.FillType.DUMP.value
+    now = datetime.datetime.utcnow()
+    detail = {'fill_process_dt': now.strftime(hs_utils.HUMANIKI_SNAPSHOT_DATE_FMT),
+              'active': True,
+              'detection_type': detection_type,
+              'stages': [],
+              }
+    a_fill = fill(date=dump_date, type=fill_type, detail=detail)
+    session.add(a_fill)
+    session.commit()
+    session.refresh(a_fill)
+    return a_fill
+
+def update_fill_detail(session, fill_id, detail_key, detail_value):
+    a_fill = session.query(fill).filter_by(id=fill_id).one()
+    a_fill.detail[detail_key] = detail_value
+    flag_modified(a_fill, "detail")
+    session.add(a_fill)
+    session.commit()
 
 def get_exact_project_id(session, exact_proj_code):
     q = session.query(project.id).filter(project.code == exact_proj_code)
     proj_id = q.scalar()
     return proj_id
 
+
+def determine_fill_item(session, dump_date):
+    """returns fill id and fill dt"""
+    # if no dump specified try and get the latest
+    if dump_date is None:
+        return get_latest_fill_id(session)
+    # else if dump is specified. attempt see if we need to overwrite
+    else:
+        try:
+            return get_exact_fill_id(session, dump_date)
+        except sqlalchemy.orm.exc.NoResultFound: # might happen if its the first time
+            return None, None
 
 class AggregationIdGetter():
     """

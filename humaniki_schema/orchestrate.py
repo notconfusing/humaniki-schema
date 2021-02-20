@@ -7,7 +7,7 @@ import sqlalchemy
 from humaniki_schema import db
 from humaniki_schema.generate_metrics import MetricFactory
 from humaniki_schema.insert import HumanikiDataInserter
-from humaniki_schema.queries import get_latest_fill_id
+from humaniki_schema.queries import get_latest_fill_id, determine_fill_item, create_new_fill, update_fill_detail
 from humaniki_schema.utils import read_config_file, make_dump_date_from_str, HUMANIKI_SNAPSHOT_DATE_FMT, \
     is_wikimedia_cloud_dump_format, numeric_part_of_filename
 from humaniki_schema.log import get_logger
@@ -18,6 +18,8 @@ log = get_logger()
 class HumanikiOrchestrator(object):
     def __init__(self, config):
         self.config = read_config_file(config, __file__)
+        self.config_insertion = self.config['insertion']
+        self.overwrite = self.config_insertion['overwrite'] if 'overwrite' in self.config_insertion else False
         self.frontfill_backfill = os.getenv("HUMANIKI_BACKFILL", "front")
         self.db_session = db.session_factory()
         self.working_fill_date = None
@@ -26,6 +28,7 @@ class HumanikiOrchestrator(object):
             self.working_fill_date = make_dump_date_from_str(self.humaniki_override_date)
         self.metrics_factory = None
         self.num_procs = os.getenv("HUMANIKI_NUM_PROCS", 4)
+        self.fill_id = None
         log.info("Humaniki Orchestrator intialized")
 
     def frontfill_determine_needs_run_from_remote_fill_dt(self):
@@ -111,6 +114,28 @@ class HumanikiOrchestrator(object):
         log.info(f'Execute metric call is: {" ".join(execute_metric_call)}')
         subprocess.run(execute_metric_call)
 
+    def create_fill_obj(self):
+        fill_id, fill_dt = determine_fill_item(self.db_session, self.working_fill_date)
+        detection_type = 'explicit' if self.humaniki_override_date else 'dumpfiles_poll'
+        create_a_fill = None
+        if not fill_id:
+            # create
+            log.info('No fill exists, going to create')
+            create_a_fill = True
+        elif self.overwrite:
+            # fill exists, shall i overwrite?
+            log.info(f'Fill exists, and we want to overwrite')
+            update_fill_detail(self.db_session, fill_id, 'active', False)
+            create_a_fill = True
+        else:
+            log.info('Fill exists, but overwrite off')
+            create_a_fill = False
+            raise AssertionError('Already have a fill for this date and overwriting not explicitly set')
+
+        if create_a_fill:
+            a_fill = create_new_fill(self.db_session, self.working_fill_date, detection_type)
+            self.fill_id = a_fill.id
+
     def run(self):
         # determine if need run
         if self.frontfill_backfill == 'front':
@@ -124,6 +149,7 @@ class HumanikiOrchestrator(object):
 
         # then run if needed
         if self.working_fill_date:
+            self.create_fill_obj()
             self.execute_java()
             self.execute_inserter()
             self.execute_create_metric_jobs()
