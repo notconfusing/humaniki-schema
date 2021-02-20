@@ -36,9 +36,16 @@ class HumanikiOrchestrator(object):
         def recorder(self):
             stages = get_exact_fill(self.db_session, self.working_fill_date).detail['stages']
             stage_name = fun.__name__
-            stages[stage_name] = True
+            stage_dict = {'start': None, 'end': None}
+            fun_start = datetime.utcnow()
+            stage_dict['start'] = fun_start
+            stages[stage_name] = stage_dict
             update_fill_detail(self.db_session, self.fill_id, 'stages', stages)
             fun(self)
+            fun_end = datetime.utcnow()
+            stage_dict['end'] = fun_end
+            stages[stage_name] = stage_dict
+            update_fill_detail(self.db_session, self.fill_id, 'stages', stages)
         return recorder
 
     def frontfill_determine_needs_run_from_remote_fill_dt(self):
