@@ -38,12 +38,13 @@ class HumanikiOrchestrator(object):
             stage_name = fun.__name__
             stage_dict = {'start': None, 'end': None}
             fun_start = datetime.utcnow()
-            stage_dict['start'] = fun_start
+            stage_dict['start'] = fun_start.strftime('%Y%m%d-%H:%M:%S')
             stages[stage_name] = stage_dict
             update_fill_detail(self.db_session, self.fill_id, 'stages', stages)
             fun(self)
             fun_end = datetime.utcnow()
-            stage_dict['end'] = fun_end
+            stage_dict['end'] = fun_end.strftime('%Y%m%d-%H:%M:%S')
+            stage_dict['total'] = fun_end - fun_start
             stages[stage_name] = stage_dict
             update_fill_detail(self.db_session, self.fill_id, 'stages', stages)
         return recorder
