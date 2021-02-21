@@ -105,8 +105,8 @@ class HumanikiDataInserter():
             a_fill = get_exact_fill(self.db_session, prev_latest_fill_dt)
             csvs_in_detail = 'extant_csvs' in a_fill.detail
 
-            # overwrite if set, unless we have no record of ever adding the csvs
-            if self.overwrite and not csvs_in_detail:
+            # overwrite if set, unless we have already a record of adding the csvs
+            if self.overwrite and csvs_in_detail:
                 # mark as inactive create new
                 log.info(f'previous fill item found for {self.dump_date} and overwriting')
                 update_fill_detail(self.db_session, prev_latest_fill_id, 'active', False)

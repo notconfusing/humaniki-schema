@@ -44,7 +44,7 @@ class HumanikiOrchestrator(object):
             fun(self)
             fun_end = datetime.utcnow()
             stage_dict['end'] = fun_end.strftime('%Y%m%d-%H:%M:%S')
-            stage_dict['total'] = fun_end - fun_start
+            stage_dict['total'] = (fun_end - fun_start).total_seconds()
             stages[stage_name] = stage_dict
             update_fill_detail(self.db_session, self.fill_id, 'stages', stages)
         return recorder
@@ -99,6 +99,7 @@ class HumanikiOrchestrator(object):
             log.exception(java_run_response)
             raise RuntimeError
 
+    @_record_stage_on_fill_item
     def execute_inserter(self):
         dump_subset = os.getenv('HUMANIKI_MAX_HUMANS', None)
         hdi = HumanikiDataInserter(config=os.environ['HUMANIKI_YAML_CONFIG'],
@@ -114,10 +115,12 @@ class HumanikiOrchestrator(object):
         else:
             pass
 
+    @_record_stage_on_fill_item
     def execute_create_metric_jobs(self):
         self._get_metrics_factory()
         self.metrics_factory.create()
 
+    @_record_stage_on_fill_item
     def execute_metric_jobs_multi(self):
         METRIC_EXECUTOR_SH = 'execute_metrics.sh'
         this_dir = os.getcwd()
