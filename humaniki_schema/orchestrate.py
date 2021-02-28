@@ -41,10 +41,15 @@ class HumanikiOrchestrator(object):
             stage_dict['start'] = fun_start.strftime('%Y%m%d-%H:%M:%S')
             stages[stage_name] = stage_dict
             update_fill_detail(self.db_session, self.fill_id, 'stages', stages)
-            fun(self)
+            stage_exception = None
+            try:
+                fun(self)
+            except BaseException as e:
+                stage_exception = e
             fun_end = datetime.utcnow()
             stage_dict['end'] = fun_end.strftime('%Y%m%d-%H:%M:%S')
             stage_dict['total'] = (fun_end - fun_start).total_seconds()
+            stage_dict['exception'] = stage_exception
             stages[stage_name] = stage_dict
             update_fill_detail(self.db_session, self.fill_id, 'stages', stages)
         return recorder
@@ -134,7 +139,7 @@ class HumanikiOrchestrator(object):
         out_redirector_symb = '>'
         execute_metric_call = [bash, target_f, num_threads, dump_dt, out_redirector_symb, out_log_f]
         log.info(f'Execute metric call is: {" ".join(execute_metric_call)}')
-        subprocess.run(execute_metric_call)
+        completed_process = subprocess.run(execute_metric_call)
 
     def create_fill_obj(self):
         fill_id, fill_dt = determine_fill_item(self.db_session, self.working_fill_date)
