@@ -1,7 +1,20 @@
 HUMANIKI_COMPLETE_NUM=29
 HUMANIKI_GEN_PROCS=2
 HUMANIKI_DUMP_DT=''
-MAX_ITERATIONS=100
+MAX_ITERATIONS=10
+
+#nota bene, this needs to be run from the directory that has generate_metrics.py
+source ../.env # if its the right directory, the one above it should have a .env there.
+
+if [ -z $HUMANIKI_PYTHON ]
+  then
+    echo "humaniki python unset using default python"
+    HUMANIKI_PYTHON=python
+  else
+    echo "humaniki python is $HUMANIKI_PYTHON"
+    fi
+
+
 
 generete_metrics_single_proc(){
   generate_complete=false
@@ -15,15 +28,16 @@ generete_metrics_single_proc(){
     ((iterations++))
     echo "$$ attempting to execute generate metrics, iteration: "$iterations
   #  python humaniki_schema/generate_metrics.py execute 20201130
-    python generate_metrics.py execute $HUMANIKI_DUMP_DT
+    echo "$HUMANIKI_PYTHON generate_metrics.py execute $HUMANIKI_DUMP_DT"
+    $HUMANIKI_PYTHON generate_metrics.py execute $HUMANIKI_DUMP_DT
     python_exit_signal=$?
     if [ $python_exit_signal = $HUMANIKI_COMPLETE_NUM ]
       then
         echo "$$ generate complete"
         generate_complete=true
-        generate_complete=false
       else
         echo "$$ not complete yet"
+        generate_complete=false
       fi
     sleep 2
   done
