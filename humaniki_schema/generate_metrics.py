@@ -389,7 +389,7 @@ class MetricCreator():
                 agg_vals_id = self.aggregation_getter.lookup(bias_value=bias_value,
                                                              dimension_values=dimension_values)
             except NoSuchWikiError:
-                log.info(f'PID:{self.pid} skipping something that dimension values {dimension_values}')
+                log.info(f'skipping something that dimension values {dimension_values}')
                 continue  # if there's a new wiki, we won't count it
             a_metric = metric(fill_id=self.fill_id,
                               population_id=self.population_definition.value,
@@ -422,18 +422,3 @@ if __name__ == '__main__':
         getattr(mf, create_execute)()
 
     log.info("Generate metrics---DONE")
-    # in the future metricfactor should fan this out to metriccreator via the config
-    # mc = MetricCreator(population_definition=PopulationDefinition.GTE_ONE_SITELINK,
-    #                    bias_property=Properties.GENDER,
-    #                    dimension_properties=[Properties.PROJECT, Properties.CITIZENSHIP],
-    #                    fill_id=mf.curr_fill,
-    #                    thresholds=None,
-    #                    db_session=mf.db_session)
-    # mc2 = MetricCreator(population_definition=PopulationDefinition.GTE_ONE_SITELINK,
-    #                    bias_property=Properties.GENDER,
-    #                    dimension_properties=[Properties.DATE_OF_BIRTH],
-    #                    fill_id=mf.curr_fill,
-    #                    thresholds=None,
-    #                    db_session=mf.db_session)
-    # mc.run()
-    # log.info(f'PID:{self.pid} Len of metric res is {len(mc.metric_res)}')

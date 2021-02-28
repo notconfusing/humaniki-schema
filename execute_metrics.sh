@@ -1,7 +1,7 @@
 HUMANIKI_COMPLETE_NUM=29
 HUMANIKI_GEN_PROCS=2
 HUMANIKI_DUMP_DT=''
-MAX_ITERATIONS=10
+MAX_ITERATIONS=100
 
 #nota bene, this needs to be run from the directory that has generate_metrics.py
 source ../.env # if its the right directory, the one above it should have a .env there.
