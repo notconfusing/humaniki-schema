@@ -103,9 +103,11 @@ def is_wikimedia_cloud_dump_format(path_filename):
         # part_one_is_date = len(filename_parts[0])==8 and filename_parts[0].isnumeric()
         numeric_part = numeric_part_of_filename(filename)
         part_one_is_date = len(numeric_part)==8 and numeric_part.isnumeric()
+        # '''we are only interested in wikidata-20210208-all.json.gz not  wikidata-20210208-lexemes.json.gz'''
+        part_one_has_all = filename_parts[0].split('-')[-1] == 'all'
         part_two_is_json = filename_parts[1] == 'json'
         part_three_is_gz = filename_parts[2] == 'gz'
-        return part_one_is_date and part_two_is_json and part_three_is_gz
+        return part_one_is_date and part_one_has_all and part_two_is_json and part_three_is_gz
     else:
         return False
 
