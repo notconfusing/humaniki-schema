@@ -83,6 +83,7 @@ class metric_coverage(Base):
     __tablename__ = 'metric_coverage'
     fill_id                         = Column(Integer, ForeignKey('fill.id'), primary_key=True)
     properties_id                   = Column(Integer, primary_key=True)
+    population_id                   = Column(BigInteger, primary_key=True)
     total_with_properties           = Column(Integer)
     total_sitelinks_with_properties = Column(Integer)
 

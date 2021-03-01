@@ -446,23 +446,24 @@ class MetricCreator():
         item_prop_q = item_prop_q.group_by(*group_bys)
         items_with = item_prop_q.subquery().alias('items_with')
 
-        # second count the number of items and sitelinks
+        # second, count the number of items and sitelinks
         coverage_q = sqlalchemy.select(
             [literal(f'{self.fill_id}').label('fill_id'),
             literal(f'{self.metric_properties_id}').label('properties_id'),
+             literal(f'{self.population_definition.value}').label('population_id'),
             func.count(items_with.c.qid).label('total_with_properties'),
             func.sum(items_with.c.sitelink_count).label('total_sitelinks_with_properties')])
 
-        # insert into
+        # insert into metric_coverage
         coverage_insert = sqlalchemy \
             .insert(metric_coverage) \
-            .from_select(names=['fill_id', 'properties_id', 'total_with_properties', 'total_sitelinks_with_properties'],
+            .from_select(names=['fill_id', 'properties_id',
+                                'population_id',
+                                'total_with_properties', 'total_sitelinks_with_properties'],
                          # array of column names that your query returns
                          select=coverage_q)  # your query or other select() object
         coverage_res = self.db_session.execute(coverage_insert)
         self.db_session.commit()
-        raw_sql = coverage_insert.statement.compile(compile_kwargs={"literal_binds": True})
-        log.debug(f'coverage sql is: {raw_sql}')
 
         return coverage_res
 

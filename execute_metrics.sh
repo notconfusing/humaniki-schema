@@ -1,5 +1,5 @@
 HUMANIKI_COMPLETE_NUM=29
-HUMANIKI_GEN_PROCS=2
+HUMANIKI_GEN_PROCS=4
 HUMANIKI_DUMP_DT=''
 MAX_ITERATIONS=100
 
@@ -20,9 +20,10 @@ generete_metrics_single_proc(){
   generate_complete=false
   iterations=0
   # sleep a little bit to help with multithreading
-  sleep_amt=.0$[ ( $RANDOM % 10 ) + 1 ]s
-  sleep $sleep_amt
+  # large sleep time ensures that making properties wont overlap
+  sleep_amt=$[ ( $RANDOM % 120 ) + 1 ]s
   echo "$$ sleeping for "$sleep_amt ", iterations "$iterations
+  sleep $sleep_amt
   while [ "$generate_complete" = false -a "$iterations" -lt $MAX_ITERATIONS ]
   do
     ((iterations++))
@@ -66,5 +67,10 @@ fi
 for (( i = 0; i < $HUMANIKI_GEN_PROCS; i++ )); do
   echo "$$ Launching gen proc "$i
   generete_metrics_single_proc &
+  pids[${i}]=$!
 done
 
+# wait for all pids
+for pid in ${pids[*]}; do
+    wait $pid
+done

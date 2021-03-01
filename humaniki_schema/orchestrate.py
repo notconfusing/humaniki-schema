@@ -138,8 +138,10 @@ class HumanikiOrchestrator(object):
         dump_dt = self.working_fill_date.strftime(HUMANIKI_SNAPSHOT_DATE_FMT)
         out_redirector_symb = '>'
         execute_metric_call = [bash, target_f, num_threads, dump_dt, out_redirector_symb, out_log_f]
+        log.info(f'current working directory is: {os.getcwd()}')
         log.info(f'Execute metric call is: {" ".join(execute_metric_call)}')
         completed_process = subprocess.run(execute_metric_call)
+        log.info(f'complete process is {completed_process}')
 
     def create_fill_obj(self):
         fill_id, fill_dt = determine_fill_item(self.db_session, self.working_fill_date)
