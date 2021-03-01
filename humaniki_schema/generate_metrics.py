@@ -7,7 +7,7 @@ from itertools import combinations, product
 
 import sqlalchemy
 
-from sqlalchemy import func, and_
+from sqlalchemy import func, and_, literal
 from sqlalchemy.orm.attributes import flag_modified
 from sqlalchemy.sql.functions import count
 from sqlalchemy.sql.operators import isnot
@@ -15,7 +15,7 @@ from sqlalchemy.sql.operators import isnot
 from humaniki_schema.queries import get_latest_fill_id, AggregationIdGetter, get_properties_obj, NoSuchWikiError, \
     get_exact_fill_id
 from humaniki_schema.db import session_factory
-from humaniki_schema.schema import human, human_sitelink, human_country, human_occupation, metric, job
+from humaniki_schema.schema import human, human_sitelink, human_country, human_occupation, metric, job, metric_coverage
 from humaniki_schema.utils import Properties, PopulationDefinition, get_enum_from_str, read_config_file, \
     make_dump_date_from_str, JobType, JobState
 from humaniki_schema.log import get_logger
@@ -147,21 +147,21 @@ class MetricFactory():
         log.info(f'PID:{self.pid} There are {uncompleted_jobs_count} uncompleted jobs')
         self.metric_job = uncompleted_jobs_first
 
-
     def _create_metric_creators(self):
         if self.metric_job is not None:
-            mc = MetricCreator(population_definition=PopulationDefinition(self.metric_job.detail["population_definition"]),
-                               bias_property=Properties(self.metric_job.detail['bias_property']),
-                               dimension_properties=[Properties(d) for d in self.metric_job.detail['dimension_properties']],
-                               thresholds=self.metric_job.detail['thresholds'],
-                               fill_id=self.metric_job.fill_id,
-                               db_session=session_factory()
-                               )
+            mc = MetricCreator(
+                population_definition=PopulationDefinition(self.metric_job.detail["population_definition"]),
+                bias_property=Properties(self.metric_job.detail['bias_property']),
+                dimension_properties=[Properties(d) for d in self.metric_job.detail['dimension_properties']],
+                thresholds=self.metric_job.detail['thresholds'],
+                fill_id=self.metric_job.fill_id,
+                db_session=session_factory()
+                )
             self.metric_creator = mc
             log.info(f"hydrate metric creator")
         else:
             log.info(f'PID:{self.pid} No metrics creator to hydrate')
-            sys.exit(29) #special signal to calling bash.
+            sys.exit(29)  # special signal to calling bash.
 
     def _run_metric_creators(self):
         # strategy_defined = 'execution_strategy' in self.config_generation
@@ -181,12 +181,12 @@ class MetricFactory():
             self.metric_job.job_state = JobState.COMPLETE.value
         except Exception as e:
             log.info(f'PID:{self.pid} Encountered {e}')
-            next_error = {str(datetime.datetime.utcnow()):repr(e)}
+            next_error = {str(datetime.datetime.utcnow()): repr(e)}
             total_errors = previous_errors + [next_error]
             self.db_session.rollback()
             self.metric_job.errors = total_errors
             flag_modified(self.metric_job, 'errors')
-            if len(total_errors) > 3: # TODO make this configurable
+            if len(total_errors) > 3:  # TODO make this configurable
                 self.metric_job.job_state = JobState.FAILED.value
             else:
                 self.metric_job.job_state = JobState.NEEDS_RETRY.value
@@ -195,7 +195,7 @@ class MetricFactory():
             self.db_session.commit()
             success = self.metric_job.job_state == JobState.COMPLETE.value
             correct_error_count = len(previous_errors) + 1 == len(self.metric_job.errors) if \
-                                    self.metric_job.errors is not None else True
+                self.metric_job.errors is not None else True
             assert success or correct_error_count
 
     def create(self):
@@ -226,7 +226,6 @@ class MetricCreator():
         self.dimension_properties = dimension_properties
         self.dimension_properties_pids = [p.value for p in self.dimension_properties]
         self.aggregation_ids = None
-        self.properties_ids = None
         self.thresholds = thresholds
         self.fill_id = fill_id
         self.db_session = db_session
@@ -322,6 +321,8 @@ class MetricCreator():
         # current fill filter
         metric_q = metric_q.filter(human.fill_id == self.fill_id)
         metric_q = metric_q.group_by(*group_bys)
+        raw_sql = metric_q.statement.compile(compile_kwargs={"literal_binds": True})
+        log.debug(f'compiled sql is: {raw_sql}')
         self.metric_q = metric_q
 
     def execute(self):
@@ -401,11 +402,73 @@ class MetricCreator():
 
         # the last bits
         self._db_save(orm_obj_list=self.insert_metrics)
-
         return
+
+    def generate_coverage(self):
+        """store the total number of items with these properties
+                and the total numeber of sitelinks"""
+        # going for something like
+        # select count(1) as total_items , sum(sitelink_count) total_sitelinks_with_prop
+        # from
+        # (SELECT qid, min(sitelink_count) as sitelink_count -- min should work because all the sitelink counts should be the same
+        # FROM human JOIN human_sitelink ON human.qid = human_sitelink.human_id
+        #       AND human.fill_id = human_sitelink.fill_id JOIN human_country ON human.qid = human_country.human_id
+        #        AND human.fill_id = human_country.fill_id
+        # WHERE human.gender IS NOT NULL AND human.fill_id = 68
+        # group by qid) items_with_prop
+
+        # first make a subquery of items with props
+        bias_col = human.gender  # maybe getattr(human, bias_property.name.lower()
+        group_bys = [human.qid]
+        population_filter = self._get_population_filter()
+
+        item_prop_q = self.db_session.query(human.qid.label('qid'),
+                                            func.min(human.sitelink_count).label('sitelink_count'))
+        # dimension joins and filters
+        for dim_prop in self.dimension_properties:
+            ## apply joins
+            join_table, join_on = self._get_dim_join_from_dim_prop(dim_prop)
+            if join_table is not None:
+                item_prop_q = item_prop_q.join(join_table, join_on)
+            ## apply filters
+            filter = self._get_dim_filter_from_dim_prop(dim_prop)
+            if filter is not None:
+                item_prop_q = item_prop_q.filter(filter)
+
+        if population_filter is not None:
+            item_prop_q = item_prop_q.filter(population_filter)
+
+        # add gender is not null
+        item_prop_q = item_prop_q.filter(isnot(human.gender, None))
+
+        # current fill filter
+        item_prop_q = item_prop_q.filter(human.fill_id == self.fill_id)
+        item_prop_q = item_prop_q.group_by(*group_bys)
+        items_with = item_prop_q.subquery().alias('items_with')
+
+        # second count the number of items and sitelinks
+        coverage_q = sqlalchemy.select(
+            [literal(f'{self.fill_id}').label('fill_id'),
+            literal(f'{self.metric_properties_id}').label('properties_id'),
+            func.count(items_with.c.qid).label('total_with_properties'),
+            func.sum(items_with.c.sitelink_count).label('total_sitelinks_with_properties')])
+
+        # insert into
+        coverage_insert = sqlalchemy \
+            .insert(metric_coverage) \
+            .from_select(names=['fill_id', 'properties_id', 'total_with_properties', 'total_sitelinks_with_properties'],
+                         # array of column names that your query returns
+                         select=coverage_q)  # your query or other select() object
+        coverage_res = self.db_session.execute(coverage_insert)
+        self.db_session.commit()
+        raw_sql = coverage_insert.statement.compile(compile_kwargs={"literal_binds": True})
+        log.debug(f'coverage sql is: {raw_sql}')
+
+        return coverage_res
 
     def run(self):
         # can do timing here
+        self.generate_coverage()
         self.compile()
         self.execute()
         self.persist()
