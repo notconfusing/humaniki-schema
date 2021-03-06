@@ -2,7 +2,8 @@ import datetime
 
 import sqlalchemy
 
-from sqlalchemy import func, and_
+from sqlalchemy import func, and_, or_, cast, String
+from sqlalchemy.dialects.mysql import JSON
 from sqlalchemy.orm import aliased
 from sqlalchemy.orm.attributes import flag_modified
 
@@ -304,8 +305,18 @@ def get_exact_fill_id(session, exact_fill_dt):
     return a_fill.id, a_fill.date
 
 
-def get_exact_fill(session, exact_fill_dt):
-    q = session.query(fill).filter(fill.date == exact_fill_dt).filter(fill.detail['active'] == True)
+def get_exact_fill(session, exact_fill_dt, include_nulls=False):
+    q = session.query(fill).filter(fill.date == exact_fill_dt)\
+        .filter(or_(fill.detail['active'] == True,
+                    (cast(fill.detail['active'], String) == 'null')))
+    # # the cast to string in necessary here because sqlalchemy has a bug where you can't directly compare the nnull
+    # of a sql value
+    res = q.one()
+    return res
+
+def get_fill_by_id(session, fill_id):
+    '''query by an id and don't care about activeness'''
+    q = session.query(fill).filter(fill.id == fill_id)
     return q.one()
 
 
@@ -313,7 +324,7 @@ def create_new_fill(session, dump_date, detection_type=None):
     fill_type = hs_utils.FillType.DUMP.value
     now = datetime.datetime.utcnow()
     detail = {'fill_process_dt': now.strftime(hs_utils.HUMANIKI_SNAPSHOT_DATE_FMT),
-              'active': True,
+              'active': None, #the user must set actvie to true when they finishe processing the dump
               'detection_type': detection_type,
               'stages': {},
               }
@@ -344,7 +355,8 @@ def determine_fill_item(session, dump_date):
     # else if dump is specified. attempt see if we need to overwrite
     else:
         try:
-            return get_exact_fill_id(session, dump_date)
+            fill_id, fill_dt = get_exact_fill_id(session, dump_date)
+            return fill_id, fill_dt
         except sqlalchemy.orm.exc.NoResultFound: # might happen if its the first time
             return None, None
 
