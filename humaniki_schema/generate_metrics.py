@@ -456,12 +456,15 @@ class MetricCreator():
 
         # insert into metric_coverage
         coverage_insert = sqlalchemy \
-            .insert(metric_coverage) \
+            .insert(metric_coverage)\
+            .prefix_with('IGNORE')\
             .from_select(names=['fill_id', 'properties_id',
                                 'population_id',
                                 'total_with_properties', 'total_sitelinks_with_properties'],
                          # array of column names that your query returns
                          select=coverage_q)  # your query or other select() object
+        coverage_sql = coverage_insert.compile(compile_kwargs={'literal_binds':True})
+        log.debug(coverage_sql)
         coverage_res = self.db_session.execute(coverage_insert)
         self.db_session.commit()
 
