@@ -9,13 +9,15 @@ import sqlalchemy
 
 from sqlalchemy import func, and_, literal
 from sqlalchemy.orm.attributes import flag_modified
+from sqlalchemy.sql.elements import _literal_as_text
 from sqlalchemy.sql.functions import count
 from sqlalchemy.sql.operators import isnot
 
 from humaniki_schema.queries import get_latest_fill_id, AggregationIdGetter, get_properties_obj, NoSuchWikiError, \
     get_exact_fill_id
 from humaniki_schema.db import session_factory
-from humaniki_schema.schema import human, human_sitelink, human_country, human_occupation, metric, job, metric_coverage
+from humaniki_schema.schema import human, human_sitelink, human_country, human_occupation, metric, job, metric_coverage, \
+    metric_aggregations_j
 from humaniki_schema.utils import Properties, PopulationDefinition, get_enum_from_str, read_config_file, \
     make_dump_date_from_str, JobType, JobState
 from humaniki_schema.log import get_logger
@@ -156,7 +158,7 @@ class MetricFactory():
                 thresholds=self.metric_job.detail['thresholds'],
                 fill_id=self.metric_job.fill_id,
                 db_session=session_factory()
-                )
+            )
             self.metric_creator = mc
             log.info(f"hydrate metric creator")
         else:
@@ -255,11 +257,11 @@ class MetricCreator():
         """
         note this is for a list of props
         """
-        col_map = {Properties.PROJECT: human_sitelink.sitelink,
-                   Properties.CITIZENSHIP: human_country.country,
-                   Properties.DATE_OF_BIRTH: human.year_of_birth,
-                   Properties.DATE_OF_DEATH: human.year_of_death,
-                   Properties.OCCUPATION: human_occupation.occupation}
+        col_map = {Properties.PROJECT: human_sitelink.sitelink.label('sitelink'),
+                   Properties.CITIZENSHIP: human_country.country.label('country'),
+                   Properties.DATE_OF_BIRTH: human.year_of_birth.label('year_of_birth'),
+                   Properties.DATE_OF_DEATH: human.year_of_death.label('year_of_death'),
+                   Properties.OCCUPATION: human_occupation.occupation.label('occupation')}
         return [col_map[p] for p in self.dimension_properties]
 
     def _get_dim_join_from_dim_prop(self, prop):
@@ -293,8 +295,8 @@ class MetricCreator():
         #     .join(human_country, and_(human.qid == human_country.human_id, human.fill_id == human_country.fill_id)) \
         #     .join(human_sitelink, and_(human.qid == human_sitelink.human_id, human.fill_id == human_sitelink.fill_id)) \
         #     .group_by(human_country.country, human_sitelink.sitelink, human.gender)
-        bias_col = human.gender  # maybe getattr(human, bias_property.name.lower()
-        count_col = func.count(bias_col)
+        bias_col = human.gender.label('gender')  # maybe getattr(human, bias_property.name.lower()
+        count_col = func.count(bias_col).label('total')
         dim_cols = self._get_dim_cols_from_dim_props()
         metric_cols = [bias_col, *dim_cols, count_col]
         group_bys = [bias_col] + dim_cols
@@ -321,9 +323,53 @@ class MetricCreator():
         # current fill filter
         metric_q = metric_q.filter(human.fill_id == self.fill_id)
         metric_q = metric_q.group_by(*group_bys)
-        raw_sql = metric_q.statement.compile(compile_kwargs={"literal_binds": True})
-        log.debug(f'compiled sql is: {raw_sql}')
+        metric_q_sub = metric_q.subquery('grouped')
+        metric_raw_sql = metric_q.statement.compile(compile_kwargs={"literal_binds": True})
+        # log.debug(f'compiled metric sql is: {metric_raw_sql}')
         self.metric_q = metric_q
+
+        ###
+        # maj joins
+        ###
+        maj_joins = []
+        dim_cols_of_metric_q_sub = []
+        for i, dim_col in enumerate(dim_cols):
+            # grouped.sitelink = JSON_UNQUOTE(JSON_EXTRACT(existing_aggs.aggregations, '$[0]'))
+            dim_col_of_metric_q_sub = getattr(metric_q_sub.c, dim_col.key)
+            maj_join = dim_col_of_metric_q_sub == \
+                       func.JSON_UNQUOTE(func.JSON_EXTRACT(metric_aggregations_j.aggregations, f"$[{i}]"))
+            maj_joins.append(maj_join)
+            dim_cols_of_metric_q_sub.append(dim_col_of_metric_q_sub)
+
+        deduped_q = self.db_session.query(
+            metric_q_sub.c.gender.label('bias_value'),
+            func.JSON_ARRAY(*dim_cols_of_metric_q_sub).label('aggregations'),
+            literal(len(dim_cols)).label('aggregations_len'),
+        ).select_from(metric_q_sub) \
+            .join(metric_aggregations_j,
+                  and_(metric_q_sub.c.gender == metric_aggregations_j.bias_value,
+                       metric_aggregations_j.aggregations_len == len(self.dimension_properties),
+                       *maj_joins),
+                  isouter=True #left join
+                  ) \
+            .filter(metric_aggregations_j.id.is_(None)) # not already present maj
+
+        dedupe_raw_sql = deduped_q.statement.compile(compile_kwargs={"literal_binds": True})
+        log.debug(f'compiled dedupe sql is: {dedupe_raw_sql}')
+
+        maj_insert = sqlalchemy \
+            .insert(metric_aggregations_j) \
+            .prefix_with('IGNORE') \
+            .from_select(names=['bias_value', 'aggregations', 'aggregations_len'],
+                         select=deduped_q)
+        maj_sql = maj_insert.compile(compile_kwargs={'literal_binds': True})
+        log.debug(maj_sql)
+
+        self.db_session.execute(maj_insert)
+        self.db_session.commit()
+
+    def pipeline_agg(self):
+        from humaniki_schema.pipeline_agg import human_to_maj
 
     def execute(self):
         try:
@@ -449,21 +495,21 @@ class MetricCreator():
         # second, count the number of items and sitelinks
         coverage_q = sqlalchemy.select(
             [literal(f'{self.fill_id}').label('fill_id'),
-            literal(f'{self.metric_properties_id}').label('properties_id'),
+             literal(f'{self.metric_properties_id}').label('properties_id'),
              literal(f'{self.population_definition.value}').label('population_id'),
-            func.count(items_with.c.qid).label('total_with_properties'),
-            func.sum(items_with.c.sitelink_count).label('total_sitelinks_with_properties')])
+             func.count(items_with.c.qid).label('total_with_properties'),
+             func.sum(items_with.c.sitelink_count).label('total_sitelinks_with_properties')])
 
         # insert into metric_coverage
         coverage_insert = sqlalchemy \
-            .insert(metric_coverage)\
-            .prefix_with('IGNORE')\
+            .insert(metric_coverage) \
+            .prefix_with('IGNORE') \
             .from_select(names=['fill_id', 'properties_id',
                                 'population_id',
                                 'total_with_properties', 'total_sitelinks_with_properties'],
                          # array of column names that your query returns
                          select=coverage_q)  # your query or other select() object
-        coverage_sql = coverage_insert.compile(compile_kwargs={'literal_binds':True})
+        coverage_sql = coverage_insert.compile(compile_kwargs={'literal_binds': True})
         log.debug(coverage_sql)
         coverage_res = self.db_session.execute(coverage_insert)
         self.db_session.commit()
@@ -472,10 +518,11 @@ class MetricCreator():
 
     def run(self):
         # can do timing here
-        self.generate_coverage()
+        # self.generate_coverage()
         self.compile()
-        self.execute()
-        self.persist()
+        self.pipeline_agg()
+        # self.execute()
+        # self.persist()
 
 
 if __name__ == '__main__':

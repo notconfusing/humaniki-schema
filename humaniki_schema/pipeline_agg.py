@@ -1,3 +1,40 @@
+# TEST: after a run of orchestrate. on 2020-11-30, with max_humans = 300
+# counts for
+# 38866,metric
+# 37018,metric_agg_j
+# 125080,metric_agg_n
+
+
+def human_to_maj_temp(table_col_tups):
+    grouped_agg_cols = ','.join([f'{table}.{col}' for (table, col) in table_col_tups])
+    return f'''-- step 1. agg to maj
+INSERT IGNORE INTO
+    metric_aggregations_j(bias_value, aggregations, aggregations_len)
+WITH grouped as (
+    SELECT human.gender, {grouped_agg_cols}, count(human.gender) AS count_1
+          FROM human
+                   JOIN human_sitelink ON human.qid = human_sitelink.human_id AND human.fill_id = human_sitelink.fill_id
+          WHERE human.gender IS NOT NULL
+            AND human.fill_id = 105
+          GROUP BY human.gender, human_sitelink.sitelink
+), deduped as (
+SELECT
+        gender  as bias_value,
+       -- TODO: autoamtion row
+       JSON_ARRAY(sitelink)              as aggregations,
+       JSON_LENGTH(JSON_ARRAY(sitelink)) as aggregations_len
+    FROM grouped
+        -- this dedupes to avoid
+    LEFT JOIN metric_aggregations_j existing_aggs
+        on grouped.gender= existing_aggs.bias_value
+           -- TODO: automation row
+           and grouped.sitelink = JSON_UNQUOTE(JSON_EXTRACT(existing_aggs.aggregations, '$[0]'))
+            and aggregations_len = 1
+    WHERE existing_aggs.id is NULL
+    )
+SELECT bias_value, aggregations, aggregations_len
+FROM deduped;'''
+
 human_to_maj = f'''-- step 1. agg to maj
 -- TODO: redo with CTE.
 INSERT IGNORE INTO
@@ -93,6 +130,8 @@ WITH grouped as (
          where n.aggregation_order=0
          and nn.aggregation_order=1
          and nnn.aggregation_order=2
+         -- TODO actually need to join this even one more time and ensure the n+1'th order is null
+          -- to preclude at 4 value aggregation coming up in 3-value scenarios
  -- don't know if i can make a better filter than that
      )
 select -1             as fill_id,
