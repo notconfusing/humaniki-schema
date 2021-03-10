@@ -7,7 +7,8 @@ from itertools import combinations, product
 
 import sqlalchemy
 
-from sqlalchemy import func, and_, literal, text
+from sqlalchemy import func, and_, literal, text, case
+from sqlalchemy.orm import aliased
 from sqlalchemy.orm.attributes import flag_modified
 from sqlalchemy.sql.elements import _literal_as_text
 from sqlalchemy.sql.functions import count
@@ -17,7 +18,7 @@ from humaniki_schema.queries import get_latest_fill_id, AggregationIdGetter, get
     get_exact_fill_id, count_table_metrics, count_table_metric_aggregations_j, count_table_metric_aggregations_n
 from humaniki_schema.db import session_factory
 from humaniki_schema.schema import human, human_sitelink, human_country, human_occupation, metric, job, metric_coverage, \
-    metric_aggregations_j, metric_aggregations_n
+    metric_aggregations_j, metric_aggregations_n, project
 from humaniki_schema.utils import Properties, PopulationDefinition, get_enum_from_str, read_config_file, \
     make_dump_date_from_str, JobType, JobState
 from humaniki_schema.log import get_logger
@@ -100,7 +101,6 @@ class MetricFactory():
             job_query = job_query.filter(
                 job.detail["dimension_properties"][i] == metric_combination["dimensions"][i].value)
 
-        # jq_str = job_query.statement.compile(compile_kwargs={"literal_binds":True}).string
         job_or_none = job_query.one_or_none()
         return job_or_none
 
@@ -260,12 +260,14 @@ class MetricCreator():
         """
         note this is for a list of props
         """
-        col_map = {Properties.PROJECT: human_sitelink.sitelink.label('sitelink'),
+        self.col_map = {
+                   Properties.GENDER: human.gender.label('gender'),
+                   Properties.PROJECT: human_sitelink.sitelink.label('sitelink'),
                    Properties.CITIZENSHIP: human_country.country.label('country'),
                    Properties.DATE_OF_BIRTH: human.year_of_birth.label('year_of_birth'),
                    Properties.DATE_OF_DEATH: human.year_of_death.label('year_of_death'),
                    Properties.OCCUPATION: human_occupation.occupation.label('occupation')}
-        return [col_map[p] for p in self.dimension_properties]
+        return [self.col_map[p] for p in self.dimension_properties]
 
     def _get_dim_join_from_dim_prop(self, prop):
         """
@@ -300,11 +302,17 @@ class MetricCreator():
             end_metrics_count = count_table_metrics(self.db_session)
             end_metric_aggregations_j_count = count_table_metric_aggregations_j(self.db_session)
             end_metric_aggregations_n_count = count_table_metric_aggregations_n(self.db_session)
-            log.info(f'Metric Counter: {end_metrics_count - start_metrics_count} metrics added')
-            log.info(
-                f'Metric Counter: {end_metric_aggregations_j_count - start_metric_aggregations_j_count} metric_aggregations_j added')
-            log.info(
-                f'Metric Counter: {end_metric_aggregations_n_count - start_metric_aggregations_n_count} metric_aggregations_n added')
+            metric_additions = end_metrics_count - start_metrics_count
+            metric_aggregations_j_additions = end_metric_aggregations_j_count - start_metric_aggregations_j_count
+            metric_aggregations_n_additions = end_metric_aggregations_n_count - start_metric_aggregations_n_count
+            metric_n_j_ratio = metric_aggregations_n_additions / metric_aggregations_j_additions if metric_aggregations_j_additions != 0 else None
+            log.info(f'Metric Counter: {metric_additions} metrics added')
+            log.info(f'Metric Counter: {metric_aggregations_j_additions} metric_aggregations_j added')
+            log.info(f'Metric Counter: {metric_aggregations_n_additions} metric_aggregations_n added')
+            log.info(f'Metric Counter: {metric_n_j_ratio} n to j ratio')
+            if metric_n_j_ratio:
+                assert metric_n_j_ratio == len(
+                    self.bias_dimension_properties_pids), 'not adding aggregations in correct ratio'
 
         return with_counts
 
@@ -398,7 +406,8 @@ class MetricCreator():
     def step_two_man_insert(self):
         '''Doing this as raw sql because the JSON_TABLE function is particularly hard in sqlalchemy'''
         when_temp = 'when aggregation_order - 1 = {i} then {prop_pid}'
-        whens = [when_temp.format(i=i, prop_pid=prop_pid) for i, prop_pid in enumerate(self.bias_dimension_properties_pids)]
+        whens = [when_temp.format(i=i, prop_pid=prop_pid) for i, prop_pid in
+                 enumerate(self.bias_dimension_properties_pids)]
         whens_str = '\n'.join(whens)
         properties_case_statement = f"""CASE {whens_str} END  as property"""
 
@@ -407,7 +416,7 @@ class MetricCreator():
         properties_eqs = [properties_eq_temp.format(i=i, prop_pid=prop_pid) for i, prop_pid in
                           enumerate(self.dimension_properties_pids)]
         properties_correct = ' AND '.join(properties_eqs)
-        another_and = 'AND' if len(self.dimension_properties)>0 else ''
+        another_and = 'AND' if len(self.dimension_properties) > 0 else ''
         properties_correct = another_and + properties_correct
 
         maj_to_man = f"""
@@ -446,8 +455,99 @@ class MetricCreator():
         self.db_session.execute(maj_to_man)
         self.db_session.commit()
 
+    def _make_agg_n_wide_project_case_statement(self, man):
+        # when the property is project/sitelink return the project code
+        return case([(man.property==0,
+                project.code),],
+            else_=man.value)
+
+    def make_metric_agg_n_wide(self):
+        # its actually faster than joining on j
+        try:
+            project_pos = self.bias_dimension_properties_pids.index(Properties.PROJECT.value)
+        except ValueError:
+            project_pos = None
+
+        mans = [aliased(metric_aggregations_n, name='n'*(i+1)) for i in range(len(self.bias_dimension_properties_pids))]
+        assert len(mans) >= 1, 'should be at least lenght 1'
+        query_cols = [self._make_agg_n_wide_project_case_statement(man_i).label(f'val_{i}') for i, man_i in enumerate(mans)]  # add in case statement if known to be sitelink
+        man_wide_q = self.db_session.query(mans[0].id,
+                                           *query_cols) \
+            .select_from(mans[0])
+
+        for i, man_i in enumerate(mans):
+            if i == 0:
+                continue
+            else:
+                man_wide_q = man_wide_q.join(man_i, mans[i-1].id==man_i.id)
+
+        if project_pos:
+            man_wide_q = man_wide_q.join(project, mans[project_pos].value==project.id,  isouter=True)
+
+        for i, man_i in enumerate(mans):
+            man_wide_q = man_wide_q.filter(man_i.aggregation_order==i)
+
+        man_wide_sql = man_wide_q.statement.compile(compile_kwargs={"literal_binds": True})
+        log.debug(f'man wide sql is: {man_wide_sql}')
+        return man_wide_q.subquery('man_wide')
+        #          select n.id,
+        #                 n.value as val1,
+        #                     case
+        #                     when nn.property = 0 then p.code
+        #                     else nn.value
+        #                     end as val2,
+        #                 nnn.value as val3
+        #          from metric_aggregations_n n
+        #             join metric_aggregations_n nn on n.id = nn.id
+        #             join metric_aggregations_n nnn on nn.id = nnn.id
+        #             left join project p
+        #                             on nn.value = p.id
+        #          where n.aggregation_order=0
+        #          and nn.aggregation_order=1
+        #          and nnn.aggregation_order=2
+        #
+
     def step_three_human_with_man_insert(self):
-        pass
+        metric_q_sub = self.make_agg_humans_query()
+        agg_n_wide = self.make_metric_agg_n_wide()
+
+        on_clauses = []
+        for i, pid in enumerate(self.bias_dimension_properties_pids):
+            metric_targ_col = self.col_map[Properties(pid)]
+            metric_col = getattr(metric.c, metric_targ_col)
+            agg_targ_col = f'val_{i}'
+            agg_n_col = getattr(agg_n_wide.c, agg_targ_col)
+            on_clauses.append(metric_col == agg_n_col)
+
+        metric_w_agg = self.db_session.query(
+            literal(self.fill_id).label('fill_id'),
+            literal(self.population_definition.value).label('population_id'),
+            literal(self.metric_properties_id).label('properties_id'),
+            agg_n_wide.c.id.label('aggrgations_id'),
+            metric_q_sub.c.gender.label('bias_value'),
+            metric_q_sub.c.total.label('total')
+        ).select_from(
+            metric_q_sub
+        ).join(
+            agg_n_wide,
+            and_(*on_clauses)
+        )
+            
+
+        metric_w_agg_sql = metric_w_agg.statement.compile(compile_kwargs={"literal_binds": True})
+        log.debug(f'man with agg sql is: {metric_w_agg_sql}')
+        #select -1             as fill_id,
+        #        -1             as population_id,
+        #        -1             as properties_id,
+        #        naggs.id      as aggergations_id,
+        #        grouped.gender as bias_value,
+        #        grouped.count_1 as total
+        # from grouped
+        # join naggs
+        #  on grouped.gender = naggs.val1
+        # and grouped.sitelink = naggs.val2
+        # and grouped.country = naggs.val3
+
 
     @_count_metrics_before_and_after
     def compile(self):

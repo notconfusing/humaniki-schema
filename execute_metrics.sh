@@ -21,7 +21,7 @@ generete_metrics_single_proc(){
   iterations=0
   # sleep a little bit to help with multithreading
   # large sleep time ensures that making properties wont overlap
-  sleep_amt=$[ ( $RANDOM % 120 ) + 1 ]s
+  sleep_amt=$[ ( $RANDOM % 10 ) + 1 ]s
   echo "$$ sleeping for "$sleep_amt ", iterations "$iterations
   sleep $sleep_amt
   while [ "$generate_complete" = false -a "$iterations" -lt $MAX_ITERATIONS ]
