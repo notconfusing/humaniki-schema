@@ -7,14 +7,14 @@ from itertools import combinations, product
 
 import sqlalchemy
 
-from sqlalchemy import func, and_, literal
+from sqlalchemy import func, and_, literal, text
 from sqlalchemy.orm.attributes import flag_modified
 from sqlalchemy.sql.elements import _literal_as_text
 from sqlalchemy.sql.functions import count
 from sqlalchemy.sql.operators import isnot
 
 from humaniki_schema.queries import get_latest_fill_id, AggregationIdGetter, get_properties_obj, NoSuchWikiError, \
-    get_exact_fill_id
+    get_exact_fill_id, count_table_metrics, count_table_metric_aggregations_j, count_table_metric_aggregations_n
 from humaniki_schema.db import session_factory
 from humaniki_schema.schema import human, human_sitelink, human_country, human_occupation, metric, job, metric_coverage, \
     metric_aggregations_j
@@ -223,10 +223,13 @@ class MetricCreator():
 
     def __init__(self, population_definition, bias_property, dimension_properties, thresholds, fill_id, db_session):
         self.population_definition = population_definition
+        self.population_filter = self._get_population_filter()
         self.coverage_q = None
         self.bias_property = bias_property
         self.dimension_properties = dimension_properties
         self.dimension_properties_pids = [p.value for p in self.dimension_properties]
+        self.bias_dimension_properties_pids = [bias_property.value] + self.dimension_properties_pids
+        self.dimension_cols = self._get_dim_cols_from_dim_props()
         self.aggregation_ids = None
         self.thresholds = thresholds
         self.fill_id = fill_id
@@ -288,7 +291,24 @@ class MetricCreator():
                       Properties.OCCUPATION: None, }
         return filter_map[dim_prop]
 
-    def compile(self):
+    def _count_metrics_before_and_after(fun):
+        def with_counts(self):
+            start_metrics_count = count_table_metrics(self.db_session)
+            start_metric_aggregations_j_count = count_table_metric_aggregations_j(self.db_session)
+            start_metric_aggregations_n_count = count_table_metric_aggregations_n(self.db_session)
+            fun(self)
+            end_metrics_count = count_table_metrics(self.db_session)
+            end_metric_aggregations_j_count = count_table_metric_aggregations_j(self.db_session)
+            end_metric_aggregations_n_count = count_table_metric_aggregations_n(self.db_session)
+            log.info(f'Metric Counter: {end_metrics_count - start_metrics_count} metrics added')
+            log.info(
+                f'Metric Counter: {end_metric_aggregations_j_count - start_metric_aggregations_j_count} metric_aggregations_j added')
+            log.info(
+                f'Metric Counter: {end_metric_aggregations_n_count - start_metric_aggregations_n_count} metric_aggregations_n added')
+
+        return with_counts
+
+    def make_agg_humans_query(self):
         # make something approximating
         # metric_q = db_session.query(human.gender, human_sitelink.sitelink, human_country.country,
         #                             func.count(human.gender)) \
@@ -297,10 +317,8 @@ class MetricCreator():
         #     .group_by(human_country.country, human_sitelink.sitelink, human.gender)
         bias_col = human.gender.label('gender')  # maybe getattr(human, bias_property.name.lower()
         count_col = func.count(bias_col).label('total')
-        dim_cols = self._get_dim_cols_from_dim_props()
-        metric_cols = [bias_col, *dim_cols, count_col]
-        group_bys = [bias_col] + dim_cols
-        population_filter = self._get_population_filter()
+        metric_cols = [bias_col, *self.dimension_cols, count_col]
+        group_bys = [bias_col] + self.dimension_cols
 
         metric_q = self.db_session.query(*metric_cols)
         # dimension joins and filters
@@ -314,8 +332,8 @@ class MetricCreator():
             if filter is not None:
                 metric_q = metric_q.filter(filter)
 
-        if population_filter is not None:
-            metric_q = metric_q.filter(population_filter)
+        if self.population_filter is not None:
+            metric_q = metric_q.filter(self.population_filter)
 
         # add gender is not null
         metric_q = metric_q.filter(isnot(human.gender, None))
@@ -327,13 +345,15 @@ class MetricCreator():
         metric_raw_sql = metric_q.statement.compile(compile_kwargs={"literal_binds": True})
         # log.debug(f'compiled metric sql is: {metric_raw_sql}')
         self.metric_q = metric_q
+        return metric_q_sub
 
+    def make_human_2_maj_insert_query(self, metric_q_sub):
         ###
         # maj joins
         ###
         maj_joins = []
         dim_cols_of_metric_q_sub = []
-        for i, dim_col in enumerate(dim_cols):
+        for i, dim_col in enumerate(self.dimension_cols):
             # grouped.sitelink = JSON_UNQUOTE(JSON_EXTRACT(existing_aggs.aggregations, '$[0]'))
             dim_col_of_metric_q_sub = getattr(metric_q_sub.c, dim_col.key)
             maj_join = dim_col_of_metric_q_sub == \
@@ -344,15 +364,15 @@ class MetricCreator():
         deduped_q = self.db_session.query(
             metric_q_sub.c.gender.label('bias_value'),
             func.JSON_ARRAY(*dim_cols_of_metric_q_sub).label('aggregations'),
-            literal(len(dim_cols)).label('aggregations_len'),
+            literal(len(self.dimension_cols)).label('aggregations_len'),
         ).select_from(metric_q_sub) \
             .join(metric_aggregations_j,
                   and_(metric_q_sub.c.gender == metric_aggregations_j.bias_value,
                        metric_aggregations_j.aggregations_len == len(self.dimension_properties),
                        *maj_joins),
-                  isouter=True #left join
+                  isouter=True  # left join
                   ) \
-            .filter(metric_aggregations_j.id.is_(None)) # not already present maj
+            .filter(metric_aggregations_j.id.is_(None))  # not already present maj
 
         dedupe_raw_sql = deduped_q.statement.compile(compile_kwargs={"literal_binds": True})
         log.debug(f'compiled dedupe sql is: {dedupe_raw_sql}')
@@ -364,9 +384,68 @@ class MetricCreator():
                          select=deduped_q)
         maj_sql = maj_insert.compile(compile_kwargs={'literal_binds': True})
         log.debug(maj_sql)
+        return maj_insert
+
+    def step_one_maj_insert(self):
+        # create sub queries and wrapping queries
+        metric_q_sub = self.make_agg_humans_query()
+        maj_insert = self.make_human_2_maj_insert_query(metric_q_sub=metric_q_sub)
 
         self.db_session.execute(maj_insert)
         self.db_session.commit()
+
+    def step_two_man_insert(self):
+        '''Doing this as raw sql because the JSON_TABLE function is particularly hard in sqlalchemy'''
+        when_temp = 'when aggregation_order - 1 = {i} then {propid}'
+        whens = [when_temp.format(i=i, propid=propid) for i, propid in enumerate(self.bias_dimension_properties_pids)]
+        whens_str = '\n'.join(whens)
+        properties_case_statement = f"""
+        CASE
+        {whens_str}
+        END  as property"""
+        maj_to_man = f"""
+        INSERT IGNORE INTO metric_aggregations_n(id, property, value, aggregation_order)
+        with exploded as
+         (select id,
+                 v.*
+          FROM metric_aggregations_j,
+               JSON_TABLE(
+                   -- since im going wide to long, make this really wide first
+                       JSON_ARRAY_INSERT(aggregations, '$[0]', bias_value),
+                       "$[*]"
+                       COLUMNS (
+                           aggregation_order for ordinality,
+                            -- even though this will get converted into an int, needs to support alpha wikicodes first.
+                           value varchar(255) path '$[0]'
+                           )
+                   ) as v
+          where metric_aggregations_j.aggregations_len = {len(self.dimension_properties)}
+         ),
+        intified as (
+         select e.id,
+                {properties_case_statement},
+                -- select either the wikicode id if it was joinable, or the nowikicode value
+                COALESCE(p.id, e.value) as value, -- if the wiki does not exist, null will result, and that will get stored as a 0.
+                aggregation_order - 1   as aggregation_order
+         from exploded e
+                  left join project p
+                            on e.value = p.code
+             )
+        SELECT id, property, value, aggregation_order
+        FROM intified;
+        """
+        log.debug(f' man to maj statement: {maj_to_man}')
+        self.db_session.execute(maj_to_man)
+        self.db_session.commit()
+
+    def step_three_human_with_man_insert(self):
+        pass
+
+    @_count_metrics_before_and_after
+    def compile(self):
+        self.step_one_maj_insert()
+        self.step_two_man_insert()
+        self.step_three_human_with_man_insert()
 
     def pipeline_agg(self):
         from humaniki_schema.pipeline_agg import human_to_maj
@@ -466,7 +545,6 @@ class MetricCreator():
         # first make a subquery of items with props
         bias_col = human.gender  # maybe getattr(human, bias_property.name.lower()
         group_bys = [human.qid]
-        population_filter = self._get_population_filter()
 
         item_prop_q = self.db_session.query(human.qid.label('qid'),
                                             func.min(human.sitelink_count).label('sitelink_count'))
@@ -481,8 +559,8 @@ class MetricCreator():
             if filter is not None:
                 item_prop_q = item_prop_q.filter(filter)
 
-        if population_filter is not None:
-            item_prop_q = item_prop_q.filter(population_filter)
+        if self.population_filter is not None:
+            item_prop_q = item_prop_q.filter(self.population_filter)
 
         # add gender is not null
         item_prop_q = item_prop_q.filter(isnot(human.gender, None))
@@ -518,9 +596,9 @@ class MetricCreator():
 
     def run(self):
         # can do timing here
-        # self.generate_coverage()
+        self.generate_coverage()
         self.compile()
-        self.pipeline_agg()
+        # self.pipeline_agg()
         # self.execute()
         # self.persist()
 

@@ -1,7 +1,7 @@
 # TEST: after a run of orchestrate. on 2020-11-30, with max_humans = 300
 # counts for
 # 38866,metric
-# 37018,metric_agg_j
+# 37018, metric_agg_j
 # 125080,metric_agg_n
 
 

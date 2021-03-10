@@ -10,7 +10,7 @@ from sqlalchemy.orm.attributes import flag_modified
 from humaniki_schema import utils as hs_utils
 from humaniki_schema.schema import fill, metric_properties_j, metric_properties_n, metric_aggregations_j, \
     metric_aggregations_n, \
-    project
+    project, metric
 import humaniki_schema.utils as hs_utils
 
 from humaniki_schema.db import session_factory
@@ -306,13 +306,14 @@ def get_exact_fill_id(session, exact_fill_dt):
 
 
 def get_exact_fill(session, exact_fill_dt, include_nulls=False):
-    q = session.query(fill).filter(fill.date == exact_fill_dt)\
+    q = session.query(fill).filter(fill.date == exact_fill_dt) \
         .filter(or_(fill.detail['active'] == True,
                     (cast(fill.detail['active'], String) == 'null')))
     # # the cast to string in necessary here because sqlalchemy has a bug where you can't directly compare the nnull
     # of a sql value
     res = q.one()
     return res
+
 
 def get_fill_by_id(session, fill_id):
     '''query by an id and don't care about activeness'''
@@ -324,7 +325,7 @@ def create_new_fill(session, dump_date, detection_type=None):
     fill_type = hs_utils.FillType.DUMP.value
     now = datetime.datetime.utcnow()
     detail = {'fill_process_dt': now.strftime(hs_utils.HUMANIKI_SNAPSHOT_DATE_FMT),
-              'active': None, #the user must set actvie to true when they finishe processing the dump
+              'active': None,  # the user must set actvie to true when they finishe processing the dump
               'detection_type': detection_type,
               'stages': {},
               }
@@ -334,12 +335,14 @@ def create_new_fill(session, dump_date, detection_type=None):
     session.refresh(a_fill)
     return a_fill
 
+
 def update_fill_detail(session, fill_id, detail_key, detail_value):
     a_fill = session.query(fill).filter_by(id=fill_id).one()
     a_fill.detail[detail_key] = detail_value
     flag_modified(a_fill, "detail")
     session.add(a_fill)
     session.commit()
+
 
 def get_exact_project_id(session, exact_proj_code):
     q = session.query(project.id).filter(project.code == exact_proj_code)
@@ -357,8 +360,23 @@ def determine_fill_item(session, dump_date):
         try:
             fill_id, fill_dt = get_exact_fill_id(session, dump_date)
             return fill_id, fill_dt
-        except sqlalchemy.orm.exc.NoResultFound: # might happen if its the first time
+        except sqlalchemy.orm.exc.NoResultFound:  # might happen if its the first time
             return None, None
+
+
+def count_table(session, table):
+    c = session.query(func.COUNT('*').label('rows')).select_from(table)
+    return c.scalar()
+
+def count_table_metrics(session):
+    return count_table(session, metric)
+
+def count_table_metric_aggregations_j(session):
+    return count_table(session, metric_aggregations_j)
+
+def count_table_metric_aggregations_n(session):
+    return count_table(session, metric_aggregations_n)
+
 
 class AggregationIdGetter():
     """
