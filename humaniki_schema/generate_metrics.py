@@ -514,7 +514,7 @@ class MetricCreator():
         on_clauses = []
         for i, pid in enumerate(self.bias_dimension_properties_pids):
             metric_targ_col = self.col_map[Properties(pid)]
-            metric_col = getattr(metric.c, metric_targ_col)
+            metric_col = getattr(metric_q_sub.c, metric_targ_col.name)
             agg_targ_col = f'val_{i}'
             agg_n_col = getattr(agg_n_wide.c, agg_targ_col)
             on_clauses.append(metric_col == agg_n_col)
@@ -532,10 +532,18 @@ class MetricCreator():
             agg_n_wide,
             and_(*on_clauses)
         )
-            
 
-        metric_w_agg_sql = metric_w_agg.statement.compile(compile_kwargs={"literal_binds": True})
-        log.debug(f'man with agg sql is: {metric_w_agg_sql}')
+        metric_w_agg_insert = sqlalchemy \
+            .insert(metric) \
+            .prefix_with('IGNORE') \
+            .from_select(names=['fill_id', 'population_id', 'properties_id', 'aggregations_id', 'bias_value', 'total'],
+                         select=metric_w_agg)
+
+        metric_w_agg_insert_sql = metric_w_agg_insert.compile(compile_kwargs={'literal_binds': True})
+        log.debug(f'man with agg sql is: {metric_w_agg_insert_sql}')
+
+        self.db_session.execute(metric_w_agg_insert)
+        self.db_session.commit()
         #select -1             as fill_id,
         #        -1             as population_id,
         #        -1             as properties_id,
