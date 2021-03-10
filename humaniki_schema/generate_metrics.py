@@ -10,7 +10,7 @@ import sqlalchemy
 from sqlalchemy import func, and_, literal, text, case
 from sqlalchemy.orm import aliased
 from sqlalchemy.orm.attributes import flag_modified
-from sqlalchemy.sql.elements import _literal_as_text
+from sqlalchemy.sql.elements import _literal_as_text, not_
 from sqlalchemy.sql.functions import count
 from sqlalchemy.sql.operators import isnot
 
@@ -469,8 +469,10 @@ class MetricCreator():
             project_pos = None
 
         mans = [aliased(metric_aggregations_n, name='n'*(i+1)) for i in range(len(self.bias_dimension_properties_pids))]
+        man_extra = aliased(metric_aggregations_n, name='extra') # this extra table allows us to filter out aggregation ids that match because they include the same elements at the smaller but have more properties and values
         assert len(mans) >= 1, 'should be at least lenght 1'
-        query_cols = [self._make_agg_n_wide_project_case_statement(man_i).label(f'val_{i}') for i, man_i in enumerate(mans)]  # add in case statement if known to be sitelink
+        # query_cols = [self._make_agg_n_wide_project_case_statement(man_i).label(f'val_{i}') for i, man_i in enumerate(mans)]  # add in case statement if known to be sitelink
+        query_cols = [project.code.label(f'val_{i}') if project_pos and project_pos==i else man_i.value.label(f'val_{i}') for i, man_i in enumerate(mans)]  # add in case statement if known to be sitelink
         man_wide_q = self.db_session.query(mans[0].id,
                                            *query_cols) \
             .select_from(mans[0])
@@ -479,7 +481,24 @@ class MetricCreator():
             if i == 0:
                 continue
             else:
-                man_wide_q = man_wide_q.join(man_i, mans[i-1].id==man_i.id)
+                man_wide_q = man_wide_q.join(man_i,
+                                             and_(mans[i-1].id==man_i.id,
+                                                  mans[i-1].aggregation_order==i-1,
+                                                  mans[i-1].property==self.bias_dimension_properties_pids[i-1],
+                                                  man_i.aggregation_order==i,
+                                                  man_i.property==self.bias_dimension_properties_pids[i])
+                                             )
+
+        man_wide_q = man_wide_q.join(man_extra,
+                                     and_(mans[0].id==man_extra.id,
+                                          mans[0].aggregation_order==0,
+                                          man_extra.aggregation_order==len(self.bias_dimension_properties_pids),
+                                          mans[0].property==self.bias_dimension_properties_pids[0],
+                                          not_(man_extra.property.in_(self.bias_dimension_properties_pids))
+                                          ),
+                                     isouter=True
+                                     )
+        man_wide_q = man_wide_q.filter(man_extra.id.is_(None))
 
         if project_pos:
             man_wide_q = man_wide_q.join(project, mans[project_pos].value==project.id,  isouter=True)
@@ -559,6 +578,7 @@ class MetricCreator():
 
     @_count_metrics_before_and_after
     def compile(self):
+        #TODO make a timing decorator
         self.step_one_maj_insert()
         self.step_two_man_insert()
         self.step_three_human_with_man_insert()
