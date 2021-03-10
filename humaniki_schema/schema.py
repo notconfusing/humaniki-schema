@@ -62,6 +62,7 @@ class metric_aggregations_j(Base):
     bias_value          = Column(Integer) # is the value of the bias property
     aggregations        = Column(JSON) # ordered list to zip with properties to get {property:val}
     aggregations_len    = Column(TINYINT)
+    properties          = Column(JSON) # ordered list to zip with aggregations to get {property:val}
 
 
 class metric_properties_n(Base):

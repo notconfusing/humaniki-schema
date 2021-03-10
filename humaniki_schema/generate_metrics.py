@@ -17,7 +17,7 @@ from humaniki_schema.queries import get_latest_fill_id, AggregationIdGetter, get
     get_exact_fill_id, count_table_metrics, count_table_metric_aggregations_j, count_table_metric_aggregations_n
 from humaniki_schema.db import session_factory
 from humaniki_schema.schema import human, human_sitelink, human_country, human_occupation, metric, job, metric_coverage, \
-    metric_aggregations_j
+    metric_aggregations_j, metric_aggregations_n
 from humaniki_schema.utils import Properties, PopulationDefinition, get_enum_from_str, read_config_file, \
     make_dump_date_from_str, JobType, JobState
 from humaniki_schema.log import get_logger
@@ -365,6 +365,7 @@ class MetricCreator():
             metric_q_sub.c.gender.label('bias_value'),
             func.JSON_ARRAY(*dim_cols_of_metric_q_sub).label('aggregations'),
             literal(len(self.dimension_cols)).label('aggregations_len'),
+            func.JSON_ARRAY(*self.dimension_properties_pids).label('properties'),
         ).select_from(metric_q_sub) \
             .join(metric_aggregations_j,
                   and_(metric_q_sub.c.gender == metric_aggregations_j.bias_value,
@@ -380,7 +381,7 @@ class MetricCreator():
         maj_insert = sqlalchemy \
             .insert(metric_aggregations_j) \
             .prefix_with('IGNORE') \
-            .from_select(names=['bias_value', 'aggregations', 'aggregations_len'],
+            .from_select(names=['bias_value', 'aggregations', 'aggregations_len', 'properties'],
                          select=deduped_q)
         maj_sql = maj_insert.compile(compile_kwargs={'literal_binds': True})
         log.debug(maj_sql)
@@ -396,13 +397,19 @@ class MetricCreator():
 
     def step_two_man_insert(self):
         '''Doing this as raw sql because the JSON_TABLE function is particularly hard in sqlalchemy'''
-        when_temp = 'when aggregation_order - 1 = {i} then {propid}'
-        whens = [when_temp.format(i=i, propid=propid) for i, propid in enumerate(self.bias_dimension_properties_pids)]
+        when_temp = 'when aggregation_order - 1 = {i} then {prop_pid}'
+        whens = [when_temp.format(i=i, prop_pid=prop_pid) for i, prop_pid in enumerate(self.bias_dimension_properties_pids)]
         whens_str = '\n'.join(whens)
-        properties_case_statement = f"""
-        CASE
-        {whens_str}
-        END  as property"""
+        properties_case_statement = f"""CASE {whens_str} END  as property"""
+
+        properties_eq_temp = """ metric_aggregations_j.properties->'$[{i}]' = {prop_pid}"""
+        # i reall dislike that in normalized version bias is included as tbe 0th agg, and in the json version not, but that's how it is
+        properties_eqs = [properties_eq_temp.format(i=i, prop_pid=prop_pid) for i, prop_pid in
+                          enumerate(self.dimension_properties_pids)]
+        properties_correct = ' AND '.join(properties_eqs)
+        another_and = 'AND' if len(self.dimension_properties)>0 else ''
+        properties_correct = another_and + properties_correct
+
         maj_to_man = f"""
         INSERT IGNORE INTO metric_aggregations_n(id, property, value, aggregation_order)
         with exploded as
@@ -420,6 +427,7 @@ class MetricCreator():
                            )
                    ) as v
           where metric_aggregations_j.aggregations_len = {len(self.dimension_properties)}
+               {properties_correct}
          ),
         intified as (
          select e.id,
