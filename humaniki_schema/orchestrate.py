@@ -37,7 +37,10 @@ class HumanikiOrchestrator(object):
     def _record_stage_on_fill_item(fun):
         @wraps(fun)
         def recorder(self):
-            stages = get_fill_by_id(self.db_session, self.fill_id).detail['stages']
+            try:
+                stages = get_fill_by_id(self.db_session, self.fill_id).detail['stages']
+            except KeyError:
+                stages = {}
             stage_name = fun.__name__
             stage_dict = {'start': None, 'end': None}
             fun_start = datetime.utcnow()
