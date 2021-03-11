@@ -312,7 +312,9 @@ class MetricCreator():
             log.info(f'Metric Counter: {metric_n_j_ratio} n to j ratio')
             if metric_n_j_ratio:
                 assert metric_n_j_ratio == len(
-                    self.bias_dimension_properties_pids), 'not adding aggregations in correct ratio'
+                    self.bias_dimension_properties_pids), 'not adding aggregations in correct ratio. ratio was' \
+                                                          f'{metric_n_j_ratio} and we expected' \
+                                                          f' {len(self.bias_dimension_properties_pids)}'
 
         return with_counts
 
