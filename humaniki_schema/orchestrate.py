@@ -1,6 +1,8 @@
 import os
 import subprocess
+import sys
 from datetime import datetime, timedelta
+from functools import wraps
 
 import sqlalchemy
 
@@ -33,6 +35,7 @@ class HumanikiOrchestrator(object):
         log.info("Humaniki Orchestrator intialized")
 
     def _record_stage_on_fill_item(fun):
+        @wraps(fun)
         def recorder(self):
             stages = get_fill_by_id(self.db_session, self.fill_id).detail['stages']
             stage_name = fun.__name__
@@ -174,7 +177,7 @@ class HumanikiOrchestrator(object):
         update_fill_detail(self.db_session, self.fill_id, 'active', True)
 
 
-    def run(self):
+    def run(self, only_fn_names=None):
         # determine if need run
         log.info("Orchestration run starting")
         if self.frontfill_backfill == 'front':
@@ -182,21 +185,37 @@ class HumanikiOrchestrator(object):
             self.frontfill_determine_needs_run_from_remote_fill_dt()
         elif self.frontfill_backfill == 'back':
             log.info("Fill direction is backfill")
-            raise NotImplementedError
+            fill_id, fill_dt = determine_fill_item(self.db_session, self.working_fill_date)
+            self.fill_id = fill_id
+            log.info(f'found existing fill id for this backfill :{self.fill_id}')
         else:
             raise AssertionError("need a front or backfill")
 
         # then run if needed
+        STEPS_ORDER = [
+            self.create_fill_obj,
+            self.execute_java,
+            self.execute_inserter,
+            self.execute_create_metric_jobs,
+            self.execute_metric_jobs_multi,
+            self.finalize_fill_obj,
+        ]
+
         if self.working_fill_date:
-            self.create_fill_obj()
-            self.execute_java()
-            self.execute_inserter()
-            self.execute_create_metric_jobs()
-            self.execute_metric_jobs_multi()
-            self.finalize_fill_obj()
+            if only_fn_names:
+                execute_steps = [step for step in STEPS_ORDER if step.__name__ in only_fn_names]
+                log.debug(f'Only going to execute steps, per CLI specification {[s.__name__ for s in execute_steps]}')
+            else:
+                execute_steps = STEPS_ORDER
+            for step in execute_steps:
+                log.debug(f'Now executing {step.__name__}')
+                step()
+
+
         log.info("Orchestration run ending")
 
 
 if __name__ == '__main__':
+    only_fn_names = sys.argv[1:] if len(sys.argv) >= 2 else None
     orchestrator = HumanikiOrchestrator(os.environ['HUMANIKI_YAML_CONFIG'])
-    orchestrator.run()
+    orchestrator.run(only_fn_names)
