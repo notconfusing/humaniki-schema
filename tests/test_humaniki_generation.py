@@ -77,7 +77,7 @@ def test_two_dim_proj_lang_gen(test_csvs, metric_factory):
                        bias_property=Properties.GENDER,
                        dimension_properties=[Properties.PROJECT, Properties.CITIZENSHIP],
                        fill_id=metric_factory.curr_fill,
-                       thresholds=None,
+                       threshold=None,
                        db_session=metric_factory.db_session)
     mc.run()
 
@@ -119,7 +119,7 @@ def test_single_dim_proj_gen(test_csvs, metric_factory):
                        bias_property=Properties.GENDER,
                        dimension_properties=[Properties.PROJECT],
                        fill_id=metric_factory.curr_fill,
-                       thresholds=None,
+                       threshold=None,
                        db_session=metric_factory.db_session)
     mc.run()
 

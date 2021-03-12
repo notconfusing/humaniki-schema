@@ -50,6 +50,14 @@ class MetricFactory():
         self.metric_job = None
         self.pid = os.getpid()
 
+
+    def _get_threshold(self, dimension_combination_len):
+        try:
+            return self.config_generation['combination']['threshold'][dimension_combination_len]
+        except KeyError:
+            # excepting both either threshold are not present in config at all or not for this length
+            return None
+
     def _generate_metric_combinations(self):
         try:
             combination_config = self.config_generation['combination']
@@ -81,6 +89,7 @@ class MetricFactory():
         dim_pop_combs_res = product(dimension_combinations, all_pop_defns)
         dim_pop_combs = [{"dimensions": dim_tuple,
                           "population_definition": pop_defn,
+                          'threshold': self._get_threshold(len(dim_tuple)),
                           "bias": bias_prop} for (dim_tuple, pop_defn) in dim_pop_combs_res]
 
         num_dim_combs = len(dimension_combinations)
@@ -105,6 +114,11 @@ class MetricFactory():
         return job_or_none
 
     def _persist_metric_combination_as_job(self, metric_combination):
+        properties_obj = get_properties_obj(bias_property=metric_combination['bias'].value,
+                           dimension_properties=[d.value for d in metric_combination["dimensions"]],
+                           session=self.db_session,
+                           create_if_no_exist=True)
+
         mc_job = job(job_type=JobType.METRIC_CREATE.value,
                      job_state=JobState.UNATTEMPTED.value,
                      fill_id=self.curr_fill,
@@ -112,7 +126,8 @@ class MetricFactory():
                              "bias_property": metric_combination["bias"].value,
                              "dimension_properties": [d.value for d in metric_combination["dimensions"]],
                              "dimension_properties_len": len(metric_combination["dimensions"]),
-                             "thresholds": None,
+                             "threshold": metric_combination['threshold'],
+                             "properties_id": properties_obj.id,
                              })
         self.db_session.add(mc_job)
         self.db_session.commit()
@@ -155,8 +170,9 @@ class MetricFactory():
                 population_definition=PopulationDefinition(self.metric_job.detail["population_definition"]),
                 bias_property=Properties(self.metric_job.detail['bias_property']),
                 dimension_properties=[Properties(d) for d in self.metric_job.detail['dimension_properties']],
-                thresholds=self.metric_job.detail['thresholds'],
+                threshold=self.metric_job.detail['threshold'],
                 fill_id=self.metric_job.fill_id,
+                properties_id=self.metric_job.detail['properties_id'],
                 db_session=session_factory()
             )
             self.metric_creator = mc
@@ -218,10 +234,10 @@ class MetricFactory():
 
 class MetricCreator():
     """
-    Create a single "metric" (expands to multiple 'metric' rows) based on a population_defintion, bias property, dimension, property, and thresholds
+    Create a single "metric" (expands to multiple 'metric' rows) based on a population_defintion, bias property, dimension, property, and threshold
     """
 
-    def __init__(self, population_definition, bias_property, dimension_properties, thresholds, fill_id, db_session):
+    def __init__(self, population_definition, bias_property, dimension_properties, threshold, fill_id, properties_id, db_session):
         self.population_definition = population_definition
         self.population_filter = self._get_population_filter()
         self.coverage_q = None
@@ -231,24 +247,18 @@ class MetricCreator():
         self.bias_dimension_properties_pids = [bias_property.value] + self.dimension_properties_pids
         self.dimension_cols = self._get_dim_cols_from_dim_props()
         self.aggregation_ids = None
-        self.thresholds = thresholds
+        self.threshold = threshold
         self.fill_id = fill_id
         self.db_session = db_session
         self.metric_q = None
         self.metric_res = None
         self.insert_metrics = []
         self.aggregation_getter = AggregationIdGetter(bias=self.bias_property, props=self.dimension_properties)
-        self.metric_properties_id = self._get_metric_properties_id()
+        self.metric_properties_id = properties_id
 
     def __str__(self):
         return f"MetricCreator. bias:{self.bias_property.name}; dimensions:{','.join([d.name for d in self.dimension_properties])}; population:{self.population_definition.name} "
 
-    def _get_metric_properties_id(self):
-        metric_properties = get_properties_obj(bias_property=self.bias_property.value,
-                                               dimension_properties=self.dimension_properties_pids,
-                                               session=self.db_session,
-                                               create_if_no_exist=True)
-        return metric_properties.id
 
     def _get_population_filter(self):
         pop_filter = {PopulationDefinition.ALL_WIKIDATA: None,
@@ -360,6 +370,8 @@ class MetricCreator():
         # current fill filter
         metric_q = metric_q.filter(human.fill_id == self.fill_id)
         metric_q = metric_q.group_by(*group_bys)
+        if self.threshold:
+            metric_q = metric_q.having(count_col >= self.threshold)
         metric_q_sub = metric_q.subquery('grouped')
         metric_raw_sql = metric_q.statement.compile(compile_kwargs={"literal_binds": True})
         # log.debug(f'compiled metric sql is: {metric_raw_sql}')
