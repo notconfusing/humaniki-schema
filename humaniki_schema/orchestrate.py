@@ -83,7 +83,7 @@ class HumanikiOrchestrator(object):
             remote_later_than_local = [fd for fd in wd_dir_dts if fd > latest_local_fill_date]
 
             if remote_later_than_local:
-                log.info(f"Lastest local was {latest_local_fill_date}, and {len(wd_dir_dts)} remote dts later")
+                log.info(f"Lastest local was {latest_local_fill_date}, and {len(remote_later_than_local)} remote dts later")
                 remote_infimum_date = min(remote_later_than_local)
                 self.working_fill_date = remote_infimum_date
             # select the remote fill date that's earliest but still greater than local
