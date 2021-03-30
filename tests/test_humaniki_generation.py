@@ -6,8 +6,7 @@ import time
 import pytest
 from sqlalchemy import func
 
-from humaniki_schema import generate_example_data, db
-from humaniki_schema.generate_example_data import create_proj_cit_metrics
+from humaniki_schema import db
 from humaniki_schema.generate_insert import insert_data
 from humaniki_schema.generate_metrics import MetricCreator, MetricFactory
 from humaniki_schema.queries import get_aggregations_obj, get_latest_fill_id, get_properties_obj

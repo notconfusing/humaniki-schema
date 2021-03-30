@@ -14,7 +14,7 @@ from sqlalchemy.sql.elements import _literal_as_text, not_
 from sqlalchemy.sql.functions import count
 from sqlalchemy.sql.operators import isnot
 
-from humaniki_schema.queries import get_latest_fill_id, AggregationIdGetter, get_properties_obj, NoSuchWikiError, \
+from humaniki_schema.queries import get_latest_fill_id, get_properties_obj, NoSuchWikiError, \
     get_exact_fill_id, count_table_metrics, count_table_metric_aggregations_j, count_table_metric_aggregations_n
 from humaniki_schema.db import session_factory
 from humaniki_schema.schema import human, human_sitelink, human_country, human_occupation, metric, job, metric_coverage, \
@@ -253,7 +253,6 @@ class MetricCreator():
         self.metric_q = None
         self.metric_res = None
         self.insert_metrics = []
-        self.aggregation_getter = AggregationIdGetter(bias=self.bias_property, props=self.dimension_properties)
         self.metric_properties_id = properties_id
 
     def __str__(self):
@@ -577,89 +576,10 @@ class MetricCreator():
 
     @_count_metrics_before_and_after
     def compile(self):
-        # TODO make a timing decorator
         self.step_one_maj_insert()
         self.step_two_man_insert()
         self.step_three_human_with_man_insert()
 
-    def execute(self):
-        try:
-            # self.db_session.rollback()
-            self.metric_res = self.metric_q.all()
-        except:
-            raise
-
-    def _db_save(self, orm_obj_list, method='bulk_save_objects'):
-        db_save_fn = getattr(self.db_session, method)
-        try:
-            db_save_fn(orm_obj_list)
-            self.db_session.commit()
-        except sqlalchemy.exc.IntegrityError as insert_error:
-            if insert_error.orig.args[1].startswith('Duplicate entry'):
-                log.info('attempting to add a metric thats already been added')
-                pass
-            else:
-                raise insert_error
-        # try:
-        #     self.db_session.add_all(self.insert_metrics)
-        #     self.db_session.commit()
-        # except sqlalchemy.exc.IntegrityError:
-        #     # try one by one
-        #     for insert_metric in self.insert_metrics:
-        #         try:
-        #             self.db_session.add(insert_metric)
-        #         except sqlalchemy.exc.IntegrityError as ie:
-        #             if ie.code == 1062: # duplicate
-        #                 log.info(f'PID:{self.pid} duplicate error on {insert_metric}')
-        #             else:
-        #                 self.db_session.rollback()
-        #                 raise
-
-    def persist(self):
-        self.aggregation_getter.get_all_known_aggregations_of_props()
-        # these remain static
-        for row_i, row in enumerate(self.metric_res):
-            if row_i % 1000 == 0:
-                log.info(row_i)
-                save_try_count = 0
-                while -1 < save_try_count < 3:
-                    save_try_count += 1
-                    try:
-                        self._db_save(orm_obj_list=self.insert_metrics)
-                        save_try_count = -1
-                    except sqlalchemy.exc.InvalidRequestError:
-                        self.db_session.rollback()
-                        time.sleep(1)
-                    finally:
-                        self.db_session.close()
-                if save_try_count == -1:
-                    self.insert_metrics = []  # emulating saving in batches of 1000
-
-            # TODO do this by name lookup not positions
-            gender = row[0]
-            count = row[-1]
-            prop_vals = row[1:-1]
-            # hope these align, this is why we need to do it by name
-            dimension_values = {prop_id: prop_val for prop_id, prop_val in
-                                zip(self.dimension_properties_pids, prop_vals)}
-            bias_value = {self.bias_property.value: gender}
-            try:
-                agg_vals_id = self.aggregation_getter.lookup(bias_value=bias_value,
-                                                             dimension_values=dimension_values)
-            except NoSuchWikiError:
-                log.info(f'skipping something that dimension values {dimension_values}')
-                continue  # if there's a new wiki, we won't count it
-            a_metric = metric(fill_id=self.fill_id,
-                              population_id=self.population_definition.value,
-                              properties_id=self.metric_properties_id,
-                              aggregations_id=agg_vals_id,
-                              bias_value=gender,
-                              total=count)
-            self.insert_metrics.append(a_metric)
-
-        # the last bits
-        self._db_save(orm_obj_list=self.insert_metrics)
-        return
 
     @_time_step
     def generate_coverage(self):
@@ -731,8 +651,7 @@ class MetricCreator():
         # can do timing here
         self.generate_coverage()
         self.compile()
-        # self.execute()
-        # self.persist()
+
 
 
 if __name__ == '__main__':

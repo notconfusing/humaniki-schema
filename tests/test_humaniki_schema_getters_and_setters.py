@@ -6,8 +6,7 @@ import time
 import pytest
 from sqlalchemy import func
 
-from humaniki_schema import generate_example_data, db
-from humaniki_schema.generate_insert import insert_data
+from humaniki_schema import db
 from humaniki_schema.queries import get_aggregations_obj, get_latest_fill_id
 from humaniki_schema.schema import metric, metric_aggregations_n
 from humaniki_schema.utils import read_config_file
@@ -19,7 +18,8 @@ session = db.session_factory()
 
 skip_generation = config['test']['skip_gen'] if 'skip_gen' in config['test'] else False
 if not skip_generation:
-    generated = generate_example_data.generate_all(config=config)
+    raise AssertionError('''generation must happen by orchestration now
+    try: `orchestrate.py with env HUMANIKI_MAX_HUMANS=100` to get tests ''')
     print(f'generated: {generated}')
     session = db.session_factory()
     metrics_count = session.query(func.count(metric.fill_id)).scalar()
