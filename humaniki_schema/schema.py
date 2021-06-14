@@ -109,6 +109,8 @@ class human_occupation(Base):
     fill_id            = Column(Integer, ForeignKey('fill.id'), primary_key=True)
     human_id           = Column(Integer, primary_key=True)
     occupation         = Column(Integer, primary_key=True)
+    superclass         = Column(SMALLINT) # a int, whose binary representation encodes the superclass relationship.
+                                          # see insert.py for more details.
 
 class human_property(Base):
     __tablename__ = 'human_property'

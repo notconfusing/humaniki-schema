@@ -15,6 +15,7 @@ from humaniki_schema.schema import fill, human, human_country, human_occupation,
     project, label_misc
 import humaniki_schema.utils as hs_utils
 from humaniki_schema.log import get_logger
+
 log = get_logger()
 
 try:
@@ -96,7 +97,6 @@ class HumanikiDataInserter():
                 self.csvs.append(csv)
         assert len(self.csvs) == len(allowable_csvs)
 
-
     def create_fill_item(self):
         prev_latest_fill_id, prev_latest_fill_dt = determine_fill_item(self.db_session, self.dump_date)
 
@@ -124,71 +124,71 @@ class HumanikiDataInserter():
         # finally
         update_fill_detail(self.db_session, self.fill_id, 'extant_csvs', self.csvs)
 
-    def _persist_rows(self, rows, method='bulk'):
-        if method == 'bulk':
-            self.db_session.bulk_save_objects(rows)
-            # except sqlalchemy.exc.IntegrityError as insert_error:
-            #     if insert_error.orig.args[1].startswith('Duplicate entry'):
-            #         log.info('attempting to add a metric thats already been added')
-            #         self.db_session.rollback()
-            log.info(f'bulk persisted {len(rows)} rows')
-            self.db_session.commit()
-        else:
-            self.db_session.add_all(rows)
-            self.db_session.commit()
-            log.info(f'standard persisted {len(rows)} rows')
-        return rows
-
-    def _insert_csv(self, table_f, extra_const_cols, schema_table, columns):
-        log.info(f'now processing {table_f}')
-        insert_rows = []
-        try:
-            table_df = pd.read_csv(table_f, sep=',', header=None, index_col=False, na_values=r'\N')
-            # table_df = table_df.replace()
-        except pd.errors.EmptyDataError:
-            return insert_rows
-
-        table_df.columns = columns
-        if extra_const_cols:
-            for col, const in extra_const_cols.items():
-                table_df[col] = const
-
-        ## TODO optimize this part without iteration
-        for ind, row in table_df.iterrows():
-            row_params = {'fill_id': self.fill_id}
-            for col, val in row.items():
-                if pd.isnull(val):
-                    val = None
-                row_params[col] = val
-            a_row = schema_table(**row_params)
-            insert_rows.append(a_row)
-        log.info(f'there are {len(insert_rows)} rows to insert for {schema_table}')
-        return insert_rows
-
-    def insert_csvs_pandas(self):
-        for csv in self.csvs:
-            csv_f = os.path.join(self.csv_dir, csv)
-            csv_table_name = csv.split('.csv')[0]
-            schema_table = getattr(humaniki_schema.schema, csv_table_name)
-            extra_const_cols = self.table_const_map[
-                csv_table_name] if csv_table_name in self.table_const_map.keys() else None
-
-            # skip this file by filename
-            if self.only_files is not None and csv_table_name not in self.only_files:
-                log.info(f'Only_files acvtive, so skipping {csv_table_name}')
-                continue
-            insert_create_row_objs_start = time.time()
-            insert_rows = self._insert_csv(table_f=csv_f,
-                                           extra_const_cols=extra_const_cols,
-                                           schema_table=schema_table,
-                                           columns=self.table_column_map[csv_table_name])
-            insert_persist_row_objs_start = time.time()
-            self._persist_rows(insert_rows)
-            insert_persist_row_objs_end = time.time()
-            log.info(
-                f'INSERT, creating row objects took: {insert_persist_row_objs_start-insert_create_row_objs_start} seconds')
-            log.info(
-                f'INSERT, persisting row objects took: {insert_persist_row_objs_end-insert_persist_row_objs_start} seconds')
+    # def _persist_rows(self, rows, method='bulk'):
+    #     if method == 'bulk':
+    #         self.db_session.bulk_save_objects(rows)
+    #         # except sqlalchemy.exc.IntegrityError as insert_error:
+    #         #     if insert_error.orig.args[1].startswith('Duplicate entry'):
+    #         #         log.info('attempting to add a metric thats already been added')
+    #         #         self.db_session.rollback()
+    #         log.info(f'bulk persisted {len(rows)} rows')
+    #         self.db_session.commit()
+    #     else:
+    #         self.db_session.add_all(rows)
+    #         self.db_session.commit()
+    #         log.info(f'standard persisted {len(rows)} rows')
+    #     return rows
+    #
+    # def _insert_csv(self, table_f, extra_const_cols, schema_table, columns):
+    #     log.info(f'now processing {table_f}')
+    #     insert_rows = []
+    #     try:
+    #         table_df = pd.read_csv(table_f, sep=',', header=None, index_col=False, na_values=r'\N')
+    #         # table_df = table_df.replace()
+    #     except pd.errors.EmptyDataError:
+    #         return insert_rows
+    #
+    #     table_df.columns = columns
+    #     if extra_const_cols:
+    #         for col, const in extra_const_cols.items():
+    #             table_df[col] = const
+    #
+    #     ## TODO optimize this part without iteration
+    #     for ind, row in table_df.iterrows():
+    #         row_params = {'fill_id': self.fill_id}
+    #         for col, val in row.items():
+    #             if pd.isnull(val):
+    #                 val = None
+    #             row_params[col] = val
+    #         a_row = schema_table(**row_params)
+    #         insert_rows.append(a_row)
+    #     log.info(f'there are {len(insert_rows)} rows to insert for {schema_table}')
+    #     return insert_rows
+    #
+    # def insert_csvs_pandas(self):
+    #     for csv in self.csvs:
+    #         csv_f = os.path.join(self.csv_dir, csv)
+    #         csv_table_name = csv.split('.csv')[0]
+    #         schema_table = getattr(humaniki_schema.schema, csv_table_name)
+    #         extra_const_cols = self.table_const_map[
+    #             csv_table_name] if csv_table_name in self.table_const_map.keys() else None
+    #
+    #         # skip this file by filename
+    #         if self.only_files is not None and csv_table_name not in self.only_files:
+    #             log.info(f'Only_files acvtive, so skipping {csv_table_name}')
+    #             continue
+    #         insert_create_row_objs_start = time.time()
+    #         insert_rows = self._insert_csv(table_f=csv_f,
+    #                                        extra_const_cols=extra_const_cols,
+    #                                        schema_table=schema_table,
+    #                                        columns=self.table_column_map[csv_table_name])
+    #         insert_persist_row_objs_start = time.time()
+    #         self._persist_rows(insert_rows)
+    #         insert_persist_row_objs_end = time.time()
+    #         log.info(
+    #             f'INSERT, creating row objects took: {insert_persist_row_objs_start-insert_create_row_objs_start} seconds')
+    #         log.info(
+    #             f'INSERT, persisting row objects took: {insert_persist_row_objs_end-insert_persist_row_objs_start} seconds')
 
     def execute_single_infile(self, csv_f, csv_table_name, column_insertion_order, extra_const_cols, escaping_options):
         column_list_str = ','.join(column_insertion_order)
@@ -214,10 +214,80 @@ class HumanikiDataInserter():
             self.execute_single_infile(csv_f, csv_table_name, column_insertion_order, extra_const_cols,
                                        escaping_options)
             insert_end = time.time()
-            log.info(f'Inserting {csv_table_name} took {insert_end-insert_start} seconds')
+            log.info(f'Inserting {csv_table_name} took {insert_end - insert_start} seconds')
 
     def validate(self):
         pass
+
+    def create_occupation_superclasses(self, superclass_levels=1):
+        """update the human_occupation table for fill by looking into the occupation_parent table for the superclasses,
+        superclass_levels times.
+        the superclass SMALLINT, is an int whose binary representation is the existence of that occupation at different superclass levels
+        superclass_level | 4 3 2 1  (1 is the item itself, 2 is the first superclass)
+        -----------------|-----------
+        occup. existence | 0 1 0 1  (this becomes a binary number)
+
+        for instnace. if a human-x item has them as an JUST football player, then they will have the entries.
+        human-x, football-player, 1 = bin(001)
+        human-x, athlete, 2 = bin(010)
+        however there are also a lot of entries where the a human-x item has them as an football player AND athlete,
+        searching the superclass tree will also result for them as an athlete, but at which level was it found?
+        my solution is:
+        human-x, football-player, 1 = bin(001)
+        human-x, athlete, 3 = bin(011)"""
+        # insert update, or delete and reinsert for fill?
+        if superclass_levels != 1:
+            raise NotImplementedError("only raising by one superclass at the moment, for time sake")
+
+        superclass_sql = f"""
+        INSERT human_occupation
+        WITH item_occ as (
+            SELECT human_id, occupation, 1 as superclass_level
+            FROM human_occupation
+            where fill_id = {self.fill_id}
+                     AND superclass is null
+            ),
+             super_occ as (
+            SELECT ho.human_id, ho.occupation, op.parent, 2 as superclass_level
+            FROM human_occupation ho
+            JOIN occupation_parent op
+                on
+                ho.fill_id = op.fill_id
+                and
+                ho.occupation = op.occupation
+            where ho.fill_id = {self.fill_id}
+                 AND superclass is null
+             ),
+             super_occ_uniq as (
+                 # potentially many occupations could roll up into the same superclass,
+                 # we want just one row per human and parent.
+                SELECT so.human_id, so.parent as occupation, ANY_VALUE(superclass_level) as superclass_level
+                 FROM super_occ so
+                 GROUP BY so.human_id, so.parent
+             ),
+            occ_union as (
+            SELECT human_id, occupation, superclass_level
+            FROM item_occ
+            UNION ALL
+            SELECT human_id, occupation, superclass_level
+            FROM super_occ_uniq
+            ),
+            occ_union_uniq as (
+                SELECT {self.fill_id} as fill_id, human_id, occupation, sum(superclass_level) as superclass
+                FROM occ_union
+                GROUP BY human_id, occupation
+            )
+        SELECT fill_id, human_id, occupation, superclass
+        FROM occ_union_uniq
+        ON DUPLICATE KEY UPDATE human_occupation.superclass = occ_union_uniq.superclass
+                                ;"""
+        log.info(superclass_sql)
+        self.db_session.get_bind().execute(superclass_sql)
+
+    def post_insert_hook(self):
+        log.info('executing post_insert_hook')
+        self.create_occupation_superclasses()
+        log.info('finished post_insert_tasks')
 
     def run(self):
         run_start = time.time()
@@ -225,14 +295,17 @@ class HumanikiDataInserter():
         self.validate_extant_csvs()
         self.create_fill_item()
         if self.insert_strategy == 'pandas':
-            self.insert_csvs_pandas()
+            raise AssertionError('not using pandas to insert any more, not performant enough')
+            # self.insert_csvs_pandas()
         elif self.insert_strategy == 'infile':
             self.insert_csvs_infile()
         else:
             raise ValueError("No valid insertion strategy provided")
         self.validate()
+        self.post_insert_hook()
         run_end = time.time()
-        log.info(f'Running took {run_end-run_start}')
+        log.info(f'Running took {run_end - run_start}')
+
 
 if __name__ == '__main__':
     dump_date = sys.argv[1] if len(sys.argv) >= 2 else None

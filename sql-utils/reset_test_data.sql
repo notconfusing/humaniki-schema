@@ -1,4 +1,5 @@
 truncate human_country;
+truncate occupation_parent;
 truncate human_occupation;
 truncate human_property;
 truncate human_sitelink;
