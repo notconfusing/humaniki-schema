@@ -282,7 +282,10 @@ class HumanikiDataInserter():
         ON DUPLICATE KEY UPDATE human_occupation.superclass = occ_union_uniq.superclass
                                 ;"""
         log.info(superclass_sql)
+        insert_start = time.time()
         self.db_session.get_bind().execute(superclass_sql)
+        insert_end = time.time()
+        log.info(f'Inserting superclass_sql took {insert_end - insert_start} seconds')
 
     def post_insert_hook(self):
         log.info('executing post_insert_hook')
