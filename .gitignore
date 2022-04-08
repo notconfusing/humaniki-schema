@@ -21,6 +21,8 @@ humaniki_schema/ipynb/\.ipynb_checkpoints/
 
 config/dev.yaml
 config/*.yaml
-
 config/
+
+!config/full.yaml
+
 logs/

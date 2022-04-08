@@ -1,0 +1,37 @@
+generation:
+  example:
+    datadir: /srv/humaniki-schema/humaniki_schema/example_data
+    len: 500
+    fills: 2
+#  skip_steps:
+#    - insert
+  execute_strategy: sequential
+  combination:
+    bias: gender
+    dimensions:
+      - project
+      - citizenship
+      - date_of_birth
+    population_definitions:
+      - all_wikidata
+      - gte_one_sitelink
+    max_combination_len: 2
+    threshold: # combination_len, thresh
+      2: 5
+      3: 100
+
+insertion:
+  # wdtk_processing_output: /data/project/denelezh/wdtk_processing_output
+  wdtk_processing_output: /mnt/nfs/labstore-secondary-project/denelezh/wdtk_processing_output
+  # use_dump: 20201109
+  # overwrite: true
+  only_files:
+    - human
+
+test:
+  test_datadir: ~/workspace/humaniki-backend/tests/test_data
+  skip_gen: true
+
+retention:
+  temp_files:
+      delete_after_days: 90
