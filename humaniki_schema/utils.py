@@ -88,11 +88,14 @@ def get_ancestor_directory_that_has_xdir_as_child(xdir, caller__file__):
     raise FileNotFoundError
 
 def make_dump_date_from_str(datestr):
-    if isinstance(datestr, date):
-        # actually you passed a date already
-        return datestr
-    else:
-        return datetime.strptime(datestr, HUMANIKI_SNAPSHOT_DATE_FMT).date()
+    try:
+        if isinstance(datestr, date):
+            # actually you passed a date already
+            return datestr
+        else:
+            return datetime.strptime(datestr, HUMANIKI_SNAPSHOT_DATE_FMT).date()
+    except ValueError:
+        return None
 
 
 def is_wikimedia_cloud_dump_format(path_filename):

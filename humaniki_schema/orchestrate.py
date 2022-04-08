@@ -1,4 +1,5 @@
 import os
+import shutil
 import subprocess
 import sys
 from datetime import datetime, timedelta
@@ -32,6 +33,7 @@ class HumanikiOrchestrator(object):
         self.metrics_factory = None
         self.num_procs = os.getenv("HUMANIKI_NUM_PROCS", 4)
         self.fill_id = None
+        self.dry_run = bool(int(os.getenv('HUMANIKI_DRY_RUN', '0')))
         log.info("Humaniki Orchestrator intialized")
 
     def _record_stage_on_fill_item(fun):
@@ -107,6 +109,7 @@ class HumanikiOrchestrator(object):
         if isinstance(java_run_response, subprocess.CompletedProcess):
             log.info('Java complete')
         else:
+            log.info('Java returned error')
             log.exception(java_run_response)
             raise RuntimeError
 
@@ -180,6 +183,44 @@ class HumanikiOrchestrator(object):
         update_fill_detail(self.db_session, self.fill_id, 'active', True)
 
 
+    def delete_temporary_files(self):
+        """Clean up the output of wdtk"""
+        wdtk_output_dir = self.config['insertion']['wdtk_processing_output']
+        delete_after_days = self.config['retention']['temp_files']['delete_after_days']
+        earliest_keep_date = datetime.today().date() - timedelta(days=delete_after_days)
+        log.info(f'the wdtk_output_dir is configured to be {wdtk_output_dir}')
+        log.info(f'the delete_after_days is configured to be {delete_after_days}')
+        log.info(f'the earliest keep date is then {earliest_keep_date}')
+        wdtk_output_subdirs = os.listdir(wdtk_output_dir)
+        # all the subdirs whose names are castable as dates, or None if not castable
+        wdtk_output_subdirs_dates = {fname: make_dump_date_from_str(fname) for fname in wdtk_output_subdirs if make_dump_date_from_str(fname)}
+        wdtk_output_subdirs_dates_older_than_policy = {fname: fdate for fname, fdate in wdtk_output_subdirs_dates.items() if fdate < earliest_keep_date}
+        for fname in wdtk_output_subdirs_dates_older_than_policy.keys():
+            full_dir_to_delete = os.path.join(wdtk_output_dir, fname)
+            if self.dry_run:
+                log.info(f'Dry run is on so, would delete {full_dir_to_delete}')
+            else:
+                log.info(f'Dry run is off so, about to delete {full_dir_to_delete}')
+                shutil.rmtree(os.path.join(wdtk_output_dir, fname))
+
+    def delete_database_data(self):
+        """delete some rows of old fills, and turn them inactive"""
+        log.info("not yet implemented")
+        pass
+
+    def retention_policy(self):
+        """delete old data for storage disk space concerns. this involves deleting temporary files"""
+        log.info("enacting retention policies")
+        if self.frontfill_backfill == 'backfill':
+            log.info("for safety do not enact retention policies on backfills")
+            return True
+        else:
+            log.info("deleting temporary files")
+            self.delete_temporary_files()
+            log.info("deleting database data")
+            self.delete_database_data()
+
+
     def run(self, only_fn_names=None):
         # determine if need run
         log.info("Orchestration run starting")
@@ -202,6 +243,7 @@ class HumanikiOrchestrator(object):
             self.execute_create_metric_jobs,
             self.execute_metric_jobs_multi,
             self.finalize_fill_obj,
+            self.retention_policy,
         ]
 
         if self.working_fill_date:
