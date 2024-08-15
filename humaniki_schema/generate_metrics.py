@@ -10,7 +10,7 @@ import sqlalchemy
 from sqlalchemy import func, and_, literal, text, case
 from sqlalchemy.orm import aliased
 from sqlalchemy.orm.attributes import flag_modified
-from sqlalchemy.sql.elements import _literal_as_text, not_
+from sqlalchemy.sql.expression import not_
 from sqlalchemy.sql.functions import count
 from sqlalchemy.sql.operators import isnot
 

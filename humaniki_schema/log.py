@@ -38,7 +38,7 @@ def get_logger(ENV=None, BASE_DIR=None):
     print(f"Logging to {logfile}")
     formatter = logging.Formatter('%(asctime)s - %(name)s({env}) - %(levelname)s - %(message)s'.format(env=ENV))
 
-    rotateHandler = ConcurrentRotatingFileHandler(logfile, "a", 32 * 1000 * 1024, 5)
+    rotateHandler = ConcurrentRotatingFileHandler(logfile, "a", 32 * 1000 * 1024, 5, encoding='utf-8')
     rotateHandler.setLevel(logging.DEBUG)
     rotateHandler.setFormatter(formatter)
     log.addHandler(rotateHandler)
