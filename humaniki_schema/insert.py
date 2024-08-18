@@ -6,6 +6,7 @@ import sys
 import time
 from os import listdir
 
+from sqlalchemy import text
 from sqlalchemy.orm.attributes import flag_modified
 import humaniki_schema
 from humaniki_schema.queries import get_latest_fill_id, get_exact_fill_id, create_new_fill, \
@@ -201,7 +202,8 @@ class HumanikiDataInserter():
                 set fill_id={self.fill_id} {extra_const_str};
         """
         log.info(infile_sql)
-        self.db_session.get_bind().execute(infile_sql)
+        # self.db_session.get_bind().execute(infile_sql)
+        self.db_session.execute(text(infile_sql))
 
     def insert_csvs_infile(self):
         for csv in self.csvs:
