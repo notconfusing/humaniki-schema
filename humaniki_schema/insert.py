@@ -19,12 +19,6 @@ from humaniki_schema.log import get_logger
 
 log = get_logger()
 
-try:
-    import pandas as pd
-    import numpy as np
-except ImportError:
-    raise ImportError('For this script at least we need pandas')
-
 from humaniki_schema.db import session_factory
 
 
@@ -125,72 +119,6 @@ class HumanikiDataInserter():
         # finally
         update_fill_detail(self.db_session, self.fill_id, 'extant_csvs', self.csvs)
 
-    # def _persist_rows(self, rows, method='bulk'):
-    #     if method == 'bulk':
-    #         self.db_session.bulk_save_objects(rows)
-    #         # except sqlalchemy.exc.IntegrityError as insert_error:
-    #         #     if insert_error.orig.args[1].startswith('Duplicate entry'):
-    #         #         log.info('attempting to add a metric thats already been added')
-    #         #         self.db_session.rollback()
-    #         log.info(f'bulk persisted {len(rows)} rows')
-    #         self.db_session.commit()
-    #     else:
-    #         self.db_session.add_all(rows)
-    #         self.db_session.commit()
-    #         log.info(f'standard persisted {len(rows)} rows')
-    #     return rows
-    #
-    # def _insert_csv(self, table_f, extra_const_cols, schema_table, columns):
-    #     log.info(f'now processing {table_f}')
-    #     insert_rows = []
-    #     try:
-    #         table_df = pd.read_csv(table_f, sep=',', header=None, index_col=False, na_values=r'\N')
-    #         # table_df = table_df.replace()
-    #     except pd.errors.EmptyDataError:
-    #         return insert_rows
-    #
-    #     table_df.columns = columns
-    #     if extra_const_cols:
-    #         for col, const in extra_const_cols.items():
-    #             table_df[col] = const
-    #
-    #     ## TODO optimize this part without iteration
-    #     for ind, row in table_df.iterrows():
-    #         row_params = {'fill_id': self.fill_id}
-    #         for col, val in row.items():
-    #             if pd.isnull(val):
-    #                 val = None
-    #             row_params[col] = val
-    #         a_row = schema_table(**row_params)
-    #         insert_rows.append(a_row)
-    #     log.info(f'there are {len(insert_rows)} rows to insert for {schema_table}')
-    #     return insert_rows
-    #
-    # def insert_csvs_pandas(self):
-    #     for csv in self.csvs:
-    #         csv_f = os.path.join(self.csv_dir, csv)
-    #         csv_table_name = csv.split('.csv')[0]
-    #         schema_table = getattr(humaniki_schema.schema, csv_table_name)
-    #         extra_const_cols = self.table_const_map[
-    #             csv_table_name] if csv_table_name in self.table_const_map.keys() else None
-    #
-    #         # skip this file by filename
-    #         if self.only_files is not None and csv_table_name not in self.only_files:
-    #             log.info(f'Only_files acvtive, so skipping {csv_table_name}')
-    #             continue
-    #         insert_create_row_objs_start = time.time()
-    #         insert_rows = self._insert_csv(table_f=csv_f,
-    #                                        extra_const_cols=extra_const_cols,
-    #                                        schema_table=schema_table,
-    #                                        columns=self.table_column_map[csv_table_name])
-    #         insert_persist_row_objs_start = time.time()
-    #         self._persist_rows(insert_rows)
-    #         insert_persist_row_objs_end = time.time()
-    #         log.info(
-    #             f'INSERT, creating row objects took: {insert_persist_row_objs_start-insert_create_row_objs_start} seconds')
-    #         log.info(
-    #             f'INSERT, persisting row objects took: {insert_persist_row_objs_end-insert_persist_row_objs_start} seconds')
-
     def execute_single_infile(self, csv_f, csv_table_name, column_insertion_order, extra_const_cols, escaping_options):
         column_list_str = ','.join(column_insertion_order)
         # TODO supports just one extra const col for now
@@ -202,7 +130,6 @@ class HumanikiDataInserter():
                 set fill_id={self.fill_id} {extra_const_str};
         """
         log.info(infile_sql)
-        # self.db_session.get_bind().execute(infile_sql)
         self.db_session.execute(text(infile_sql))
 
     def insert_csvs_infile(self):
@@ -285,7 +212,7 @@ class HumanikiDataInserter():
                                 ;"""
         log.info(superclass_sql)
         insert_start = time.time()
-        self.db_session.get_bind().execute(superclass_sql)
+        self.db_session.execute(text(superclass_sql))
         insert_end = time.time()
         log.info(f'Inserting superclass_sql took {insert_end - insert_start} seconds')
 
@@ -300,10 +227,7 @@ class HumanikiDataInserter():
         self.detect_fill_date()
         self.validate_extant_csvs()
         self.create_fill_item()
-        if self.insert_strategy == 'pandas':
-            raise AssertionError('not using pandas to insert any more, not performant enough')
-            # self.insert_csvs_pandas()
-        elif self.insert_strategy == 'infile':
+        if self.insert_strategy == 'infile':
             self.insert_csvs_infile()
         else:
             raise ValueError("No valid insertion strategy provided")
