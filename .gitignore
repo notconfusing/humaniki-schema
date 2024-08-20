@@ -9,7 +9,7 @@ alembic/versions/__pycache__/
 
 alembic\.ini
 
-\.env
+*\.env*
 
 humaniki_schema/\.ipynb_checkpoints/
 

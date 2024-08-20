@@ -49,6 +49,8 @@ class HumanikiOrchestrator(object):
             stage_dict['start'] = fun_start.strftime('%Y%m%d-%H:%M:%S')
             stages[stage_name] = stage_dict
             update_fill_detail(self.db_session, self.fill_id, 'stages', stages)
+            self.db_session.expire_all() ##  fixes an error when the function takes a long time
+
             stage_exception = None
             try:
                 fun(self)
