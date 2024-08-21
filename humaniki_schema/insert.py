@@ -118,6 +118,8 @@ class HumanikiDataInserter():
 
         # finally
         update_fill_detail(self.db_session, self.fill_id, 'extant_csvs', self.csvs)
+        self.db_session.commit() # release the lock hopefully for orchestrate.py
+
 
     def execute_single_infile(self, csv_f, csv_table_name, column_insertion_order, extra_const_cols, escaping_options):
         column_list_str = ','.join(column_insertion_order)
