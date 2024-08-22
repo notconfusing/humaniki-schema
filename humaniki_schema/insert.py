@@ -222,6 +222,8 @@ class HumanikiDataInserter():
         log.info('executing post_insert_hook')
         # TODO turn on occupation superclassing when performance is fixed
         # self.create_occupation_superclasses()
+        self.db_session.commit()
+        self.db_session.expire_all()
         log.info('finished post_insert_tasks')
 
     def run(self):

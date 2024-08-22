@@ -49,19 +49,26 @@ class HumanikiOrchestrator(object):
             stage_dict['start'] = fun_start.strftime('%Y%m%d-%H:%M:%S')
             stages[stage_name] = stage_dict
             update_fill_detail(self.db_session, self.fill_id, 'stages', stages)
-            self.db_session.expire_all() ##  fixes an error when the function takes a long time
-
+            self.db_session.commit() # trying to fix an error where the function accesses the fill as well
             stage_exception = None
             try:
                 fun(self)
             except BaseException as e:
                 stage_exception = str(e)
             fun_end = datetime.utcnow()
+
+            # get the stages dict again in case fun edited itself
+            stage_dict = stages[stage_name]
             stage_dict['end'] = fun_end.strftime('%Y%m%d-%H:%M:%S')
             stage_dict['total'] = (fun_end - fun_start).total_seconds()
             stage_dict['exception'] = stage_exception
             stages[stage_name] = stage_dict
-            update_fill_detail(self.db_session, self.fill_id, 'stages', stages)
+            try:
+                log.debug(f'wanting to write: {stage_dict}')
+                update_fill_detail(self.db_session, self.fill_id, 'stages', stages)
+            except sqlalchemy.exc.OperationalError:
+                log.info('Proable deadlock caught')
+                pass # if there's some deadlock because another item is editing the fill, just skip
         return recorder
 
     def frontfill_determine_needs_run_from_remote_fill_dt(self):
