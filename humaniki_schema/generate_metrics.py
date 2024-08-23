@@ -440,7 +440,7 @@ class MetricCreator():
         another_and = 'AND' if len(self.dimension_properties) > 0 else ''
         properties_correct = another_and + properties_correct
 
-        maj_to_man = f"""
+        maj_to_man = text(f"""
         INSERT IGNORE INTO metric_aggregations_n(id, property, value, aggregation_order)
         with exploded as
          (select id,
@@ -471,7 +471,7 @@ class MetricCreator():
              )
         SELECT id, property, value, aggregation_order
         FROM intified;
-        """
+        """)
         log.debug(f' man to maj statement: {maj_to_man}')
         self.db_session.execute(maj_to_man)
         self.db_session.commit()
@@ -625,11 +625,11 @@ class MetricCreator():
 
         # second, count the number of items and sitelinks
         coverage_q = sqlalchemy.select(
-            [literal(f'{self.fill_id}').label('fill_id'),
+            literal(f'{self.fill_id}').label('fill_id'),
              literal(f'{self.metric_properties_id}').label('properties_id'),
              literal(f'{self.population_definition.value}').label('population_id'),
              func.count(items_with.c.qid).label('total_with_properties'),
-             func.sum(items_with.c.sitelink_count).label('total_sitelinks_with_properties')])
+             func.sum(items_with.c.sitelink_count).label('total_sitelinks_with_properties'))
 
         # insert into metric_coverage
         coverage_insert = sqlalchemy \
