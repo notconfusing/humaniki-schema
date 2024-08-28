@@ -192,6 +192,7 @@ class HumanikiOrchestrator(object):
         update_fill_detail(self.db_session, self.fill_id, 'active', True)
 
 
+    @_record_stage_on_fill_item
     def delete_temporary_files(self):
         """Clean up the output of wdtk"""
         wdtk_output_dir = self.config['insertion']['wdtk_processing_output']
@@ -212,10 +213,11 @@ class HumanikiOrchestrator(object):
                 log.info(f'Dry run is off so, about to delete {full_dir_to_delete}')
                 shutil.rmtree(os.path.join(wdtk_output_dir, fname))
 
+    @_record_stage_on_fill_item
     def delete_database_data(self):
         """delete some rows of old fills, and turn them inactive"""
-        log.info("not yet implemented")
-        pass
+        delete_after_days = self.config['retention']['temp_files']['delete_after_days']
+        delete_database_data(retention_days=delete_after_days, max_fills_to_delete=5):
 
     def retention_policy(self):
         """delete old data for storage disk space concerns. this involves deleting temporary files"""
